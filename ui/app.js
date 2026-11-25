@@ -12,7 +12,7 @@ const icons = {
   video: '<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m3 19 5-5 3 3 5-6 5 6"/>',
   send: '<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>',
-  expand: '<path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>',
+  close: '<path d="m6 6 12 12M18 6 6 18"/>',
   download: '<path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/>'
 };
 document.querySelectorAll('[data-icon]').forEach(node => {
@@ -379,24 +379,13 @@ function resizeArtboard() {
 new ResizeObserver(resizeArtboard).observe(artboard);
 $('show-grid').onchange = () => canvasWrap.classList.toggle('grid-visible', $('show-grid').checked);
 
-async function toggleFullscreen() {
-  try {
-    if (window.desktop) {
-      await window.desktop.toggleFullscreen();
-    } else if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await document.documentElement.requestFullscreen();
-    }
-  } catch (error) { status(error.message); }
+if (window.desktop?.closeWindow) {
+  $('close-window').hidden = false;
+  $('close-window').onclick = async () => {
+    try { await window.desktop.closeWindow(); }
+    catch (error) { status(error.message); }
+  };
 }
-$('fullscreen').onclick = toggleFullscreen;
-document.addEventListener('keydown', event => {
-  if (event.key === 'F11') {
-    event.preventDefault();
-    toggleFullscreen();
-  }
-});
 
 let videoTemplates = [];
 let referenceUrl;

@@ -4,13 +4,13 @@ Windows-desktopapp van WG Makelaars voor vastgoedposts, video en publicatie op s
 
 ## Openen op Windows
 
-Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** met het WG-logo op je bureaublad en in het Startmenu.
+Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** met het WG-logo op je bureaublad en in het Startmenu. De app opent in volledig scherm. Rechtsboven sluit je de app met **App afsluiten**.
 
 Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip) volledig uitpakken en **WG Social Studio.exe** openen. Houd dan de uitgepakte bestanden bij elkaar.
 
 ## Werkruimte
 
-- **Post ontwerpen** · upload een woningfoto, kies formaat en onderwerp, stel uitsnede en helderheid in en exporteer als PNG. Gebruik het compositieraster voor uitlijning en **F11** voor volledig scherm.
+- **Post ontwerpen** · upload een woningfoto, kies formaat en onderwerp, stel uitsnede en helderheid in en exporteer als PNG. Gebruik het compositieraster voor uitlijning.
 - **Templatebibliotheek** · vind posttemplates onder Verkoop, Verkocht, Open huis en Overig. Beheer hier ook je videotemplates en AI-documentprompts. Importeer een Canva-PNG met een transparante fotozone. De app zet de foto achter het ontwerp. Geïmporteerde tekst en vormgeving zitten vast in de PNG. Een gewoon beeldvoorbeeld levert een basiskleur en passend formaat voor het WG-ontwerp. De bibliotheek wordt lokaal opgeslagen.
 - **ChatGPT** · schrijf bijschriften met optionele voorbeeldteksten per onderwerp. Gebruik een OpenAI API-sleutel met API-toegang. De app bewaart de ingevoerde sleutel alleen tijdens de sessie.
 - **AI-documenten** · kies een prompt voor een woningbrochure, verkoopvoorstel, bezichtigingsverslag of openhuisdraaiboek, of bewaar je eigen prompt. Voeg je gegevens en notities toe, bewerk het gegenereerde concept en sla het op als Word-compatibel RTF-bestand.

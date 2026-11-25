@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('desktop', {
   saveImage: bytes => ipcRenderer.invoke('save-image', bytes),
   openVideo: () => ipcRenderer.invoke('open-video'),
   exportVideo: options => ipcRenderer.invoke('export-video', options),
-  toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
   listVideoTemplates: () => ipcRenderer.invoke('list-video-templates'),
   importVideoTemplate: fields => ipcRenderer.invoke('import-video-template', fields),
   previewVideoTemplate: id => ipcRenderer.invoke('preview-video-template', id),

@@ -25,14 +25,15 @@ function pickVideo() {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 1470, height: 980, minWidth: 880, minHeight: 640,
+    fullscreen: true,
+    minWidth: 880, minHeight: 640,
     backgroundColor: '#f2f5fa', autoHideMenuBar: true,
     icon: path.join(__dirname, 'ui', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true }
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());
-  window.maximize();
+  window.on('leave-full-screen', () => window.setFullScreen(true));
   window.loadFile('ui/index.html');
 }
 
@@ -109,11 +110,8 @@ ipcMain.handle('save-document', async (_, { title, body }) => {
   return true;
 });
 
-ipcMain.handle('toggle-fullscreen', event => {
-  const window = BrowserWindow.fromWebContents(event.sender);
-  const fullscreen = !window.isFullScreen();
-  window.setFullScreen(fullscreen);
-  return fullscreen;
+ipcMain.handle('close-window', event => {
+  BrowserWindow.fromWebContents(event.sender)?.close();
 });
 
 function videoLibraryPath() {
