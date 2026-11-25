@@ -11,7 +11,7 @@ const icons = {
   sparkles: '<path d="M12 3c0 6-3 9-9 9 6 0 9 3 9 9 0-6 3-9 9-9-6 0-9-3-9-9ZM19 3v4m-2-2h4"/>',
   video: '<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m3 19 5-5 3 3 5-6 5 6"/>',
-  send: '<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>',
+  settings: '<path d="M4 7h16M4 17h16M9 4v6m6 4v6"/>',
   download: '<path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/>'
 };
 document.querySelectorAll('[data-icon]').forEach(node => {
@@ -52,8 +52,7 @@ function showTab(id) {
   document.querySelectorAll('[data-tab]').forEach(item => item.removeAttribute('aria-current'));
   button.setAttribute('aria-current', 'page');
   $('title').textContent = button.textContent.trim();
-  $('export-image').hidden = $('go-publish').hidden = id !== 'design';
-  if (id === 'publish') refreshPublishPreview();
+  $('export-image').hidden = id !== 'design';
   if (id === 'templates') renderTemplateLibrary();
 }
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => showTab(button.dataset.tab));
@@ -140,7 +139,6 @@ function render() {
 }
 function refreshArtboard() {
   resizeArtboard();
-  if (!$('publish').hidden) refreshPublishPreview();
 }
 async function chooseTemplate(template) {
   const version = ++selection;
@@ -273,11 +271,11 @@ $('generate-text').onclick = async () => {
         'Aangeleverde gegevens en notities: ' + ($('document-details').value.trim() || 'Geen aanvullende gegevens.')].join('\n\n')
       : ['Onderwerp: ' + $('copy-topic').value, 'Opdracht: ' + prompt,
         example && 'Gebruik dit voorbeeld alleen als stijlgids:\n' + example].filter(Boolean).join('\n\n');
-    const output = await window.desktop.writeText({ key: $('api-key').value, prompt: request, mode });
+    const output = await window.desktop.writeText({ prompt: request, mode });
     writingDrafts[mode].output = output;
     if (writingMode === mode) $('copy-output').value = output;
     if (!output) status('OpenAI heeft geen tekst teruggegeven.');
-  } catch (error) { status(error.message); }
+  } catch (error) { status(desktopError(error)); }
   finally { $('generate-text').disabled = false; }
 };
 $('copy-text').onclick = async () => {
@@ -499,7 +497,6 @@ $('generate-montage').onclick = async () => {
   feedback.textContent = 'Beelden analyseren en de montage maken…';
   try {
     const result = await window.desktop.generateMontage({
-      key: $('video-key').value.trim() || $('api-key').value,
       prompt: $('video-prompt').value.trim(),
       showLogo: $('video-logo').checked,
       templateId: activeVideoTemplate.id
@@ -510,7 +507,7 @@ $('generate-montage').onclick = async () => {
     $('montage-summary').textContent = result.summary;
     ['view-source', 'view-montage', 'save-montage', 'montage-summary'].forEach(id => { $(id).hidden = false; });
     showVideo('montage');
-  } catch (error) { feedback.textContent = error.message; }
+  } catch (error) { feedback.textContent = desktopError(error); }
   finally {
     makingMontage = false;
     updateMontageAction();
@@ -522,63 +519,53 @@ $('save-montage').onclick = async () => {
   } catch (error) { status(error.message); }
 };
 
-let publishPreviewUrl;
-let accountsConnected = false;
-let sentPost;
-function refreshPublishPreview() {
-  canvas.toBlob(blob => {
-    if (!blob) return;
-    if (publishPreviewUrl) URL.revokeObjectURL(publishPreviewUrl);
-    publishPreviewUrl = URL.createObjectURL(blob);
-    $('publish-image').src = publishPreviewUrl;
-  }, 'image/jpeg', .94);
+function desktopError(error) {
+  return error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
 }
-$('go-publish').onclick = () => showTab('publish');
-$('import-caption').onclick = () => {
-  $('publish-caption').value = writingMode === 'caption' ? $('copy-output').value : writingDrafts.caption.output;
-};
-$('connect-social').onclick = async () => {
-  if (!window.desktop) return status('Open de desktopapp om je accounts te koppelen.');
-  const button = $('connect-social');
-  const feedback = $('connection-status');
-  button.disabled = true;
+
+const apiKeyStatus = $('api-key-status');
+const keyForm = $('api-key-form');
+const keyField = $('api-key');
+function showKeyStatus(value) {
+  $('clear-api-key').hidden = value !== 'saved' && value !== 'unreadable';
+  const messages = {
+    missing: 'Er is nog geen API-sleutel opgeslagen.',
+    saved: 'Je sleutel is versleuteld opgeslagen voor dit Windows-gebruikersaccount. Ook na opnieuw opstarten staat hij klaar.',
+    environment: 'De app gebruikt een API-sleutel uit de omgevingsinstellingen.'
+  };
+  apiKeyStatus.textContent = messages[value] || 'Sla je API-sleutel opnieuw op of verwijder de oude sleutel.';
+  document.querySelectorAll('.ai-key-link').forEach(link => { link.hidden = value === 'saved' || value === 'environment'; });
+}
+
+document.querySelectorAll('[data-open-settings]').forEach(button => {
+  button.onclick = () => { showTab('settings'); keyField.focus(); };
+});
+keyForm.onsubmit = async event => {
+  event.preventDefault();
+  if (!window.desktop?.saveApiKey) return status('Open de desktopapp om een sleutel op te slaan.');
+  $('save-api-key').disabled = $('clear-api-key').disabled = true;
   try {
-    const accounts = await window.desktop.connectSocial({ pageId: $('page-id').value.trim(), token: $('page-token').value });
-    feedback.textContent = 'Gekoppeld · ' + accounts.facebook + ' en @' + accounts.instagram;
-    accountsConnected = true;
-    $('page-token').value = '';
-  } catch (error) { feedback.textContent = error.message; }
-  finally {
-    button.disabled = false;
-    $('publish-post').disabled = !accountsConnected;
-  }
+    showKeyStatus(await window.desktop.saveApiKey(keyField.value));
+    keyField.value = '';
+  } catch (error) { apiKeyStatus.textContent = desktopError(error); }
+  finally { $('save-api-key').disabled = $('clear-api-key').disabled = false; }
 };
-$('publish-post').onclick = async () => {
-  const button = $('publish-post');
-  const feedback = $('publish-feedback');
-  button.disabled = $('connect-social').disabled = true;
+$('clear-api-key').onclick = async () => {
+  $('save-api-key').disabled = $('clear-api-key').disabled = true;
   try {
-    const caption = $('publish-caption').value.trim();
-    const { width, height } = canvas;
-    const image = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .94));
-    const bytes = new Uint8Array(await image.arrayBuffer());
-    const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))).join(',');
-    if (sentPost?.fingerprint === fingerprint && sentPost?.caption === caption) {
-      throw new Error('Deze post is al verzonden. Controleer de resultaten per account voordat je verdergaat.');
-    }
-    const result = await window.desktop.publishSocial({
-      bytes, width, height, caption,
-      cloud: $('cloud-name').value.trim(), preset: $('cloud-preset').value.trim()
-    });
-    if (!result) return;
-    sentPost = { fingerprint, caption };
-    feedback.hidden = false;
-    feedback.textContent = [['Facebook', result.facebook], ['Instagram', result.instagram]].map(([name, delivery]) => (
-      name + (delivery.id ? ' · gepubliceerd (' + delivery.id + ')' : ' · controleer je account: ' + delivery.error)
-    )).join('\n');
-  } catch (error) { status(error.message); }
-  finally { button.disabled = !accountsConnected; $('connect-social').disabled = false; }
+    showKeyStatus(await window.desktop.clearApiKey());
+    keyField.value = '';
+  } catch (error) { apiKeyStatus.textContent = desktopError(error); }
+  finally { $('save-api-key').disabled = $('clear-api-key').disabled = false; }
 };
+if (window.desktop?.apiKeyStatus) {
+  window.desktop.apiKeyStatus().then(showKeyStatus).catch(error => {
+    showKeyStatus('unreadable');
+    apiKeyStatus.textContent = desktopError(error);
+  });
+} else {
+  showKeyStatus('missing');
+}
 
 const categoryTopics = { sale: 'Nieuw in verkoop', sold: 'Verkocht', open: 'Open huis', other: '' };
 const categoryNames = { sale: 'Verkoop', sold: 'Verkocht', open: 'Open huis', video: 'Video', documents: 'AI-documenten', other: 'Overig' };

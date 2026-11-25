@@ -21,6 +21,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:win
+      - name: Verify video montage with Windows FFmpeg
+        shell: pwsh
+        run: |
+          $resources = 'dist/win-unpacked/resources'
+          $result = node scripts/verify-video.cjs "$resources/ffmpeg/ffmpeg.exe" "$resources/ui/icon.png" 2>&1
+          $result | Write-Output
+          if ($LASTEXITCODE -ne 0) {
+            $message = ($result | Select-Object -Last 8) -join ' '
+            Write-Output "::error title=Video montage check::$message"
+            throw 'Windows FFmpeg montage check failed'
+          }
       - name: Build Windows installer
         shell: pwsh
         run: |

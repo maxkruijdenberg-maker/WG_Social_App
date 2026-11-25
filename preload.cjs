@@ -9,8 +9,9 @@ contextBridge.exposeInMainWorld('desktop', {
   previewVideoTemplate: id => ipcRenderer.invoke('preview-video-template', id),
   generateMontage: options => ipcRenderer.invoke('generate-montage', options),
   saveMontage: () => ipcRenderer.invoke('save-montage'),
-  connectSocial: options => ipcRenderer.invoke('connect-social', options),
-  publishSocial: options => ipcRenderer.invoke('publish-social', options),
+  apiKeyStatus: () => ipcRenderer.invoke('api-key-status'),
+  saveApiKey: key => ipcRenderer.invoke('save-api-key', key),
+  clearApiKey: () => ipcRenderer.invoke('clear-api-key'),
   saveDocument: options => ipcRenderer.invoke('save-document', options),
   writeText: options => ipcRenderer.invoke('write-text', options)
 });

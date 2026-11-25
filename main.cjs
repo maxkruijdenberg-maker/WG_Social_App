@@ -1,15 +1,13 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
 const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
-const social = require('./social.cjs');
+const { createKeyStore, requestText } = require('./openai.cjs');
 const { createRtf } = require('./document.cjs');
 const { addVideoTemplate, getVideoTemplate, listVideoTemplates, videoType } = require('./video-templates.cjs');
 
 let selectedVideo;
 let montage;
-let connection;
-let publishing = false;
 
 function ffmpegBinary() {
   return app.isPackaged && process.platform === 'win32'
@@ -80,25 +78,19 @@ ipcMain.handle('export-video', async (_, { start, end, muted }) => {
   return true;
 });
 
-ipcMain.handle('write-text', async (_, { prompt, key, mode }) => {
-  const token = key?.trim() || process.env.OPENAI_API_KEY;
-  if (!token) throw new Error('Vul je OpenAI API-sleutel in om ChatGPT te gebruiken.');
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-4.1-mini',
-      instructions: mode === 'document'
-        ? 'Je schrijft zakelijke Nederlandstalige documenten voor WG Makelaars. Gebruik heldere alinea’s, tussenkoppen met ## en desgewenst opsommingen met -. Laat de titel weg; de app voegt die toe. Gebruik alleen aangeleverde feiten. Noteer ontbrekende essentiële gegevens als [invullen]. Geef alleen het conceptdocument, zonder codeblokken.'
-        : 'Je schrijft Nederlandstalige socialmediaberichten voor WG Makelaars. Verzin geen woningdetails. Geef alleen de voorgestelde tekst.',
-      input: prompt
-    }),
-    signal: AbortSignal.timeout(60000)
-  });
-  if (!response.ok) throw new Error('OpenAI-aanvraag mislukt (HTTP ' + response.status + '). Controleer je sleutel en API-toegang.');
-  const result = await response.json();
-  return result.output.flatMap(item => item.content || [])
-    .filter(item => item.type === 'output_text').map(item => item.text).join('\n');
+function keyStore() {
+  return createKeyStore(safeStorage, path.join(app.getPath('userData'), 'openai-key.bin'), process.env.OPENAI_API_KEY?.trim());
+}
+
+ipcMain.handle('api-key-status', () => keyStore().status());
+ipcMain.handle('save-api-key', (_, key) => keyStore().save(key));
+ipcMain.handle('clear-api-key', () => keyStore().clear());
+
+ipcMain.handle('write-text', async (_, { prompt, mode }) => {
+  const instruction = mode === 'document'
+    ? 'Je schrijft zakelijke Nederlandstalige documenten voor WG Makelaars. Gebruik heldere alinea’s, tussenkoppen met ## en desgewenst opsommingen met -. Laat de titel weg; de app voegt die toe. Gebruik alleen aangeleverde feiten. Noteer ontbrekende essentiële gegevens als [invullen]. Geef alleen het conceptdocument, zonder codeblokken.'
+    : 'Je schrijft Nederlandstalige socialmediaberichten voor WG Makelaars. Verzin geen woningdetails. Geef alleen de voorgestelde tekst.';
+  return requestText(await keyStore().requireKey(), { instructions: instruction, input: prompt });
 });
 
 ipcMain.handle('save-document', async (_, { title, body }) => {
@@ -129,12 +121,11 @@ ipcMain.handle('preview-video-template', async (_, id) => {
   return { bytes: await readFile(template.file), type: template.type };
 });
 
-ipcMain.handle('generate-montage', async (_, { key, prompt, showLogo, templateId }) => {
-  const token = key?.trim() || process.env.OPENAI_API_KEY;
+ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId }) => {
   const source = selectedVideo;
   if (!source) throw new Error('Laad eerst de video die je wilt bewerken.');
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
-  if (!token) throw new Error('Vul je OpenAI API-sleutel in om de montage te maken.');
+  const token = await keyStore().requireKey();
   const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
     showLogo ? path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui', 'icon.png') : undefined);
   if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
@@ -153,28 +144,6 @@ ipcMain.handle('save-montage', async () => {
   }
   await writeFile(filePath, output.bytes);
   return true;
-});
-
-ipcMain.handle('connect-social', async (_, options) => {
-  connection = await social.connect(options);
-  return { facebook: connection.pageName, instagram: connection.instagram.username };
-});
-
-ipcMain.handle('publish-social', async (event, options) => {
-  if (!connection) throw new Error('Koppel eerst je Facebook-pagina en Instagram-account.');
-  if (publishing) throw new Error('Er wordt al een post gepubliceerd.');
-  publishing = true;
-  const accounts = connection;
-  try {
-    const { response } = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
-      type: 'question', buttons: ['Annuleren', 'Nu publiceren'], defaultId: 0, cancelId: 0,
-      message: 'Deze post nu publiceren op Facebook én Instagram?',
-      detail: accounts.pageName + ' · @' + accounts.instagram.username
-    });
-    return response === 1 ? await social.publish(accounts, options) : null;
-  } finally {
-    publishing = false;
-  }
 });
 
 app.whenReady().then(createWindow);

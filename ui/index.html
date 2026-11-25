@@ -16,12 +16,12 @@
     <button data-tab="templates"><i data-icon="layers"></i> Templatebibliotheek</button>
     <button data-tab="text"><i data-icon="sparkles"></i> ChatGPT</button>
     <button data-tab="video"><i data-icon="video"></i> Video-editor</button>
-    <button data-tab="publish"><i data-icon="send"></i> Publiceren</button>
+    <button data-tab="settings"><i data-icon="settings"></i> Instellingen</button>
   </nav>
   <div class="side-bottom"><span>WG</span><div><strong>WG Makelaars</strong><small>Lokale werkruimte</small></div></div>
 </aside>
 <main>
-  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><div class="actions"><button class="secondary" id="export-image"><i data-icon="download"></i> Download PNG</button><button class="primary" id="go-publish"><i data-icon="send"></i> Publiceren</button></div></header>
+  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><div class="actions"><button class="secondary" id="export-image"><i data-icon="download"></i> Download PNG</button></div></header>
   <section id="design" class="screen design">
     <div class="workspace">
       <div class="workspace-bar"><strong>Voorvertoning</strong><label><span class="sr-only">Formaat</span><select id="format"><option value="1080x1080">Instagram · 1:1</option><option value="1080x1350">Instagram · 4:5</option><option value="1080x1920">Story · 9:16</option><option value="1200x628">Facebook · 1.91:1</option></select></label></div>
@@ -85,7 +85,7 @@
     </div>
     <div class="content-grid">
       <article class="card"><h3>Opdracht</h3>
-        <label>OpenAI API-sleutel <input type="password" id="api-key" autocomplete="off" placeholder="Alleen nodig als er geen sleutel is ingesteld"></label>
+        <p class="hint ai-key-link" hidden>OpenAI-sleutel nodig. <button class="secondary" type="button" data-open-settings>API-sleutel instellen</button></p>
         <div id="caption-settings">
           <label>Voorbeeldtekst voor dit onderwerp<textarea id="example-copy" rows="3" placeholder="Plak hier een voorbeeld van de gewenste toon."></textarea></label>
           <div class="row"><label>Onderwerp<select id="copy-topic"></select></label><button class="secondary" id="save-example">Voorbeeld bewaren</button></div>
@@ -134,7 +134,7 @@
         <div class="actions"><button class="secondary" id="show-video-library">Kies in templatebibliotheek</button><button class="secondary" id="preview-template" aria-pressed="false" hidden>Voorbeeld bekijken</button></div>
         <hr>
         <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
-        <label>OpenAI API-sleutel<input type="password" id="video-key" autocomplete="off" placeholder="Gebruikt ook de sleutel op het ChatGPT-tabblad"></label>
+        <p class="hint ai-key-link" hidden>OpenAI-sleutel nodig. <button class="secondary" type="button" data-open-settings>API-sleutel instellen</button></p>
         <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
         <p class="hint">Voor de analyse gaan tijdcodes en geselecteerde stilstaande beelden uit beide video's naar OpenAI.</p>
         <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
@@ -142,38 +142,19 @@
       </article>
     </div>
   </section>
-  <section id="publish" class="screen pane" hidden>
-    <div class="section-title"><h2>Publiceer op Facebook en Instagram</h2><p>Plaats je gemaakte afbeelding met één bijschrift op beide accounts.</p></div>
-    <div class="content-grid publish-grid">
-      <article class="card">
-        <h3>Post controleren</h3>
-        <div class="publish-preview"><img id="publish-image" alt="Voorbeeld van de post die je gaat publiceren"></div>
-        <label>Bijschrift<textarea id="publish-caption" rows="4" maxlength="2200" placeholder="Schrijf een bijschrift voor Facebook en Instagram."></textarea></label>
-        <div class="actions"><button class="secondary" id="import-caption">Neem ChatGPT-tekst over</button><button class="primary" id="publish-post" disabled><i data-icon="send"></i> Publiceer op beide</button></div>
-        <p id="publish-feedback" class="hint" role="status" hidden></p>
-      </article>
-      <article class="card">
-        <h3>Accounts koppelen</h3>
-        <label>Facebook-pagina-ID<input type="text" id="page-id" inputmode="numeric" placeholder="Bijvoorbeeld 1234567890"></label>
-        <label>Meta-paginatoegangstoken<input type="password" id="page-token" autocomplete="off" placeholder="Toegangstoken van je Facebook-pagina"></label>
-        <button class="secondary" id="connect-social">Accounts koppelen</button>
-        <p id="connection-status" class="hint" role="status">Koppel een Facebook-pagina met een professioneel Instagram-account.</p>
-        <details>
-          <summary>Hoe koppel ik mijn accounts?</summary>
-          <ol class="hint">
-            <li>Koppel in Meta Business Suite je professionele Instagram-account aan je Facebook-pagina.</li>
-            <li>Haal in Meta for Developers het pagina-ID en paginatoegangstoken op met de publicatierechten voor Facebook en Instagram.</li>
-            <li>Vul het ID en token hierboven in. Klik op <strong>Accounts koppelen</strong> en controleer de twee namen.</li>
-            <li>Vul voor publicatie ook je Cloudinary-cloudnaam en openbare uploadpreset in.</li>
-          </ol>
-        </details>
-        <hr>
-        <h3>Afbeelding beschikbaar maken</h3>
-        <p class="hint">Instagram haalt de afbeelding op via een openbare HTTPS-link. De app uploadt de post daarvoor naar je Cloudinary-account.</p>
-        <label>Cloudinary-cloudnaam<input id="cloud-name" placeholder="Jouw cloudnaam"></label>
-        <label>Cloudinary-uploadpreset<input id="cloud-preset" placeholder="Naam van een unsigned uploadpreset"></label>
-      </article>
-    </div>
+  <section id="settings" class="screen pane" hidden>
+    <article class="card key-settings">
+      <h2>OpenAI API-sleutel</h2>
+      <p class="hint">Sla je sleutel hier eenmaal op voor ChatGPT, AI-documenten en videomontage.</p>
+      <form id="api-key-form">
+        <label>API-sleutel<input id="api-key" type="password" autocomplete="off" spellcheck="false" maxlength="512" placeholder="Plak je OpenAI API-sleutel"></label>
+        <div class="actions">
+          <button class="primary" id="save-api-key" type="submit">Sleutel opslaan</button>
+          <button class="secondary" id="clear-api-key" type="button" hidden>Sleutel verwijderen</button>
+        </div>
+      </form>
+      <p class="hint" id="api-key-status" role="status"></p>
+    </article>
   </section>
   <div id="status" role="status" hidden></div>
 </main>

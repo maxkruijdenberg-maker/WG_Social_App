@@ -1,6 +1,6 @@
 {
   "name": "wg-social-studio",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "private": true,
   "description": "Social media studio voor WG Makelaars",
   "author": "WG Makelaars",
@@ -27,7 +27,7 @@
       "montage.cjs",
       "document.cjs",
       "video-templates.cjs",
-      "social.cjs",
+      "openai.cjs",
       "preload.cjs",
       "ui/**/*",
       "package.json"
