@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('desktop', {
   saveMontage: () => ipcRenderer.invoke('save-montage'),
   connectSocial: options => ipcRenderer.invoke('connect-social', options),
   publishSocial: options => ipcRenderer.invoke('publish-social', options),
+  saveDocument: options => ipcRenderer.invoke('save-document', options),
   writeText: options => ipcRenderer.invoke('write-text', options)
 });

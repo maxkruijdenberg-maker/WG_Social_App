@@ -13,7 +13,7 @@
   <div class="brand"><img src="logo.svg" alt="WG Makelaars"><div><strong>WG Social Studio</strong><small>WG MAKELAARS</small></div></div>
   <nav aria-label="Werkruimte">
     <button data-tab="design"><i data-icon="layout"></i> Post ontwerpen</button>
-    <button data-tab="templates"><i data-icon="layers"></i> Templates</button>
+    <button data-tab="templates"><i data-icon="layers"></i> Templatebibliotheek</button>
     <button data-tab="text"><i data-icon="sparkles"></i> ChatGPT</button>
     <button data-tab="video"><i data-icon="video"></i> Video-editor</button>
     <button data-tab="publish"><i data-icon="send"></i> Publiceren</button>
@@ -42,30 +42,66 @@
     </aside>
   </section>
   <section id="templates" class="screen pane" hidden>
-    <div class="section-title"><h2>Templates per onderwerp</h2><p>Bewaar een geëxporteerd Canva-ontwerp of een eigen voorbeeld bij het juiste onderwerp.</p></div>
-    <div class="content-grid">
-      <article class="card"><h3>Voorbeeld toevoegen</h3>
-        <label>Onderwerp<input id="template-topic" list="topics" placeholder="Bijvoorbeeld Nieuw in verkoop"><datalist id="topics"></datalist></label>
-        <label>Naam van template<input id="template-name" placeholder="Bijvoorbeeld Canva · Instagram"></label>
+    <p class="library-intro">Vind je postontwerpen, voorbeeldvideo’s en documentprompts op één plek.</p>
+    <div class="category-bar" role="group" aria-label="Templatecategorie">
+      <button class="secondary" data-category="sale">Verkoop</button>
+      <button class="secondary" data-category="sold">Verkocht</button>
+      <button class="secondary" data-category="open">Open huis</button>
+      <button class="secondary" data-category="video">Video</button>
+      <button class="secondary" data-category="documents">AI-documenten</button>
+      <button class="secondary" data-category="other">Overig</button>
+    </div>
+    <div class="content-grid library-grid">
+      <article class="card">
+        <h3 id="library-heading">Verkoop</h3>
+        <div id="library"></div>
+      </article>
+      <article class="card" id="image-template-form"><h3>Posttemplate toevoegen</h3>
+        <label>Onderwerp<input id="template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld een woning uitgelicht"><datalist id="topics"></datalist></label>
+        <label>Naam van template<input id="template-name" maxlength="100" placeholder="Bijvoorbeeld Canva · Instagram"></label>
         <label>Afbeelding<input type="file" id="template-file" accept="image/png,image/jpeg,image/webp"></label>
         <label>Toepassen als<select id="template-mode"><option value="overlay">Canva-overlay met transparante fotozone</option><option value="reference">Voorbeeld voor kleuren en beeldverhouding</option></select></label>
-        <p class="hint">Exporteer voor een overlay een PNG met een transparante uitsparing. In de editor wordt je foto achter de uitsparing geplaatst.</p>
-        <button id="add-template" class="primary">Template opslaan</button>
+        <p class="hint">Gebruik een PNG met een transparante fotozone om een woningfoto in een Canva-ontwerp te plaatsen.</p>
+        <button id="add-template" class="primary">Posttemplate opslaan</button>
       </article>
-      <article class="card"><h3>Bibliotheek</h3><div id="library"></div></article>
+      <article class="card" id="video-library-form" hidden><h3>Videotemplate toevoegen</h3>
+        <label>Naam (optioneel)<input id="video-template-name" maxlength="100" placeholder="Bijvoorbeeld Woningtour"></label>
+        <label>Onderwerp (optioneel)<input id="video-template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld Nieuw in verkoop"></label>
+        <button class="primary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen en bewaren</button>
+        <p class="hint">De app bewaart een lokale kopie voor volgende montages.</p>
+      </article>
+      <article class="card" id="document-library-form" hidden><h3 id="document-form-heading">Documentprompt toevoegen</h3>
+        <label>Naam<input id="document-template-name" maxlength="100" placeholder="Bijvoorbeeld Waardebepalingsbrief"></label>
+        <label>Prompt<textarea id="document-template-prompt" rows="8" maxlength="8000" placeholder="Beschrijf het gewenste document, de onderdelen en de toon."></textarea></label>
+        <div class="actions"><button class="primary" id="save-document-template">Prompt opslaan</button><button class="secondary" id="cancel-document-template" hidden>Annuleren</button></div>
+      </article>
     </div>
   </section>
   <section id="text" class="screen pane" hidden>
-    <div class="section-title"><h2>Schrijf met ChatGPT</h2><p>Maak een bijschrift, advertentietekst of korte versie voor social media.</p></div>
+    <div class="section-title"><h2>Schrijven met ChatGPT</h2><p>Kies een bijschrift voor social media of maak een document met een opgeslagen prompt.</p></div>
+    <div class="category-bar" role="group" aria-label="Type tekst">
+      <button class="secondary" data-writing-mode="caption">Socialmediabijschrift</button>
+      <button class="secondary" data-writing-mode="document">AI-document</button>
+    </div>
     <div class="content-grid">
       <article class="card"><h3>Opdracht</h3>
         <label>OpenAI API-sleutel <input type="password" id="api-key" autocomplete="off" placeholder="Alleen nodig als er geen sleutel is ingesteld"></label>
-        <label>Voorbeeldtekst voor dit onderwerp<textarea id="example-copy" rows="4" placeholder="Plak hier een voorbeeld van de gewenste toon."></textarea></label>
-        <div class="row"><label>Onderwerp<select id="copy-topic"></select></label><button class="secondary" id="save-example">Voorbeeld bewaren</button></div>
-        <label>Instructie<textarea id="prompt" rows="4" placeholder="Schrijf een Instagram-bijschrift over deze woning. Gebruik de volgende woningdetails…"></textarea></label>
+        <div id="caption-settings">
+          <label>Voorbeeldtekst voor dit onderwerp<textarea id="example-copy" rows="3" placeholder="Plak hier een voorbeeld van de gewenste toon."></textarea></label>
+          <div class="row"><label>Onderwerp<select id="copy-topic"></select></label><button class="secondary" id="save-example">Voorbeeld bewaren</button></div>
+        </div>
+        <div id="document-settings" hidden>
+          <label>Documentprompt<select id="document-prompt-select"></select></label>
+          <button class="secondary" id="show-document-library">Documentprompts beheren</button>
+          <label>Documenttitel<input id="document-title" maxlength="100" placeholder="Bijvoorbeeld Woningbrochure · Parklaan 24"></label>
+        </div>
+        <label>Instructie<textarea id="prompt" rows="5" placeholder="Beschrijf wat ChatGPT moet schrijven."></textarea></label>
+        <label id="document-details-label" hidden>Gegevens en notities<textarea id="document-details" rows="4" maxlength="16000" placeholder="Plak hier de woninggegevens, namen en andere informatie voor dit document."></textarea></label>
         <button id="generate-text" class="primary">Tekst genereren</button>
       </article>
-      <article class="card"><h3>Concepttekst</h3><label class="sr-only" for="copy-output">Concepttekst</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je tekst. Je kunt deze direct aanpassen."></textarea><button class="secondary" id="copy-text">Tekst kopiëren</button></article>
+      <article class="card"><h3 id="output-heading">Concepttekst</h3><label class="sr-only" for="copy-output">Concept</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je concept. Je kunt het direct aanpassen."></textarea>
+        <div class="actions"><button class="secondary" id="copy-text">Tekst kopiëren</button><button class="primary" id="export-document" hidden>Opslaan voor Word (.rtf)</button></div>
+      </article>
     </div>
   </section>
   <section id="video" class="screen pane" hidden>
@@ -97,13 +133,7 @@
         <h3>Videotemplate</h3>
         <label>Opgeslagen voorbeeldvideo<select id="video-template"><option value="">Kies een videotemplate</option></select></label>
         <button class="secondary" id="preview-template" aria-pressed="false" disabled>Voorbeeld bekijken</button>
-        <details id="video-template-import">
-          <summary>Nieuw videotemplate toevoegen</summary>
-          <label>Naam (optioneel)<input id="video-template-name" maxlength="100" placeholder="Bijvoorbeeld Woningtour"></label>
-          <label>Onderwerp (optioneel)<input id="video-template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld Nieuw in verkoop"></label>
-          <button class="secondary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen en bewaren</button>
-          <p class="hint">De app bewaart een lokale kopie van dit voorbeeld.</p>
-        </details>
+        <button class="secondary" id="show-video-library">Videotemplates beheren</button>
         <hr>
         <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
         <label>OpenAI API-sleutel<input type="password" id="video-key" autocomplete="off" placeholder="Gebruikt ook de sleutel op het ChatGPT-tabblad"></label>

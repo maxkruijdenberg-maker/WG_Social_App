@@ -3,6 +3,7 @@ const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
 const social = require('./social.cjs');
+const { createRtf } = require('./document.cjs');
 const { addVideoTemplate, getVideoTemplate, listVideoTemplates, videoType } = require('./video-templates.cjs');
 
 let selectedVideo;
@@ -75,7 +76,7 @@ ipcMain.handle('export-video', async (_, { start, end, muted }) => {
   return true;
 });
 
-ipcMain.handle('write-text', async (_, { prompt, key }) => {
+ipcMain.handle('write-text', async (_, { prompt, key, mode }) => {
   const token = key?.trim() || process.env.OPENAI_API_KEY;
   if (!token) throw new Error('Vul je OpenAI API-sleutel in om ChatGPT te gebruiken.');
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -83,7 +84,9 @@ ipcMain.handle('write-text', async (_, { prompt, key }) => {
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4.1-mini',
-      instructions: 'Je schrijft Nederlandstalige socialmediaberichten voor WG Makelaars. Verzin geen woningdetails. Geef alleen de voorgestelde tekst.',
+      instructions: mode === 'document'
+        ? 'Je schrijft zakelijke Nederlandstalige documenten voor WG Makelaars. Gebruik heldere alinea’s, tussenkoppen met ## en desgewenst opsommingen met -. Laat de titel weg; de app voegt die toe. Gebruik alleen aangeleverde feiten. Noteer ontbrekende essentiële gegevens als [invullen]. Geef alleen het conceptdocument, zonder codeblokken.'
+        : 'Je schrijft Nederlandstalige socialmediaberichten voor WG Makelaars. Verzin geen woningdetails. Geef alleen de voorgestelde tekst.',
       input: prompt
     }),
     signal: AbortSignal.timeout(60000)
@@ -92,6 +95,18 @@ ipcMain.handle('write-text', async (_, { prompt, key }) => {
   const result = await response.json();
   return result.output.flatMap(item => item.content || [])
     .filter(item => item.type === 'output_text').map(item => item.text).join('\n');
+});
+
+ipcMain.handle('save-document', async (_, { title, body }) => {
+  if (typeof body !== 'string' || !body.trim()) throw new Error('Er is geen conceptdocument om op te slaan.');
+  const documentTitle = typeof title === 'string' ? title.trim().slice(0, 100) || 'WG Makelaars' : 'WG Makelaars';
+  const filename = documentTitle.replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').replace(/[. ]+$/, '') || 'WG-document';
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    defaultPath: filename + '.rtf', filters: [{ name: 'Word-compatibel document', extensions: ['rtf'] }]
+  });
+  if (canceled) return false;
+  await writeFile(filePath, createRtf(documentTitle, body), 'utf8');
+  return true;
 });
 
 ipcMain.handle('toggle-fullscreen', event => {

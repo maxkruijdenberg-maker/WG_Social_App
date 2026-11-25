@@ -55,6 +55,7 @@ function showTab(id) {
   $('title').textContent = button.textContent.trim();
   $('export-image').hidden = $('go-publish').hidden = id !== 'design';
   if (id === 'publish') refreshPublishPreview();
+  if (id === 'templates') renderTemplateLibrary();
 }
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => showTab(button.dataset.tab));
 
@@ -190,26 +191,7 @@ function refreshLibrary(topic = activeTemplate.topic, id = activeTemplate.id) {
   $('copy-topic').value = topics.includes(copyTopic) ? copyTopic : topic;
   $('example-copy').value = examples[$('copy-topic').value] || '';
   $('topics').replaceChildren(...topics.map(name => new Option(name)));
-  $('library').replaceChildren(...templates.map(template => {
-    const button = document.createElement('button');
-    button.className = 'library-row';
-    const thumb = document.createElement('span');
-    thumb.className = 'thumb';
-    thumb.style.backgroundColor = template.color;
-    const label = document.createElement('span');
-    const title = document.createElement('strong');
-    const category = document.createElement('small');
-    title.textContent = template.name;
-    category.textContent = template.topic;
-    label.append(title, category);
-    button.append(thumb, label);
-    button.onclick = () => {
-      $('topic').value = template.topic;
-      refreshTemplateOptions(template.topic, template.id);
-      showTab('design');
-    };
-    return button;
-  }));
+  renderTemplateLibrary();
   refreshTemplateOptions(topic, id);
 }
 $('topic').onchange = () => refreshTemplateOptions($('topic').value);
@@ -254,7 +236,8 @@ function referenceColor(image) {
   return 'rgb(' + [r, g, b].map(channel => Math.round(channel / count * .45)).join(',') + ')';
 }
 $('add-template').onclick = async () => {
-  const topic = $('template-topic').value.trim();
+  const category = libraryCategory;
+  const topic = $('template-topic').value.trim() || categoryTopics[category];
   const name = $('template-name').value.trim();
   const file = $('template-file').files[0];
   if (!topic || !name || !file) return status('Vul onderwerp en naam in en kies een afbeelding.');
@@ -262,7 +245,7 @@ $('add-template').onclick = async () => {
     const image = await imageFromFile(file);
     const mode = $('template-mode').value;
     if (mode === 'overlay' && file.type !== 'image/png') return status('Gebruik een transparante PNG voor een overlay.');
-    const template = { id: crypto.randomUUID(), name, topic, file, mode, headline: topic, color: referenceColor(image), ratio: image.width / image.height, width: image.width, height: image.height };
+    const template = { id: crypto.randomUUID(), name, topic, category, file, mode, headline: topic, color: referenceColor(image), ratio: image.width / image.height, width: image.width, height: image.height };
     await libraryRequest('readwrite', store => store.add(template));
     templates.push(template);
     refreshLibrary(topic, template.id);
@@ -282,14 +265,19 @@ $('generate-text').onclick = async () => {
   if (!prompt) return status('Beschrijf welke tekst je wilt schrijven.');
   if (!window.desktop) return status('Open de desktopapp om ChatGPT te gebruiken.');
   $('generate-text').disabled = true;
+  const mode = writingMode;
+  const isDocument = mode === 'document';
   try {
     const example = $('example-copy').value.trim();
-    $('copy-output').value = await window.desktop.writeText({
-      key: $('api-key').value,
-      prompt: ['Onderwerp: ' + $('copy-topic').value, 'Opdracht: ' + prompt,
-        example && 'Gebruik dit voorbeeld alleen als stijlgids:\n' + example].filter(Boolean).join('\n\n')
-    });
-    if (!$('copy-output').value) status('OpenAI heeft geen tekst teruggegeven.');
+    const request = isDocument
+      ? ['Opdracht: ' + prompt, 'Documenttitel: ' + $('document-title').value.trim(),
+        'Aangeleverde gegevens en notities: ' + ($('document-details').value.trim() || 'Geen aanvullende gegevens.')].join('\n\n')
+      : ['Onderwerp: ' + $('copy-topic').value, 'Opdracht: ' + prompt,
+        example && 'Gebruik dit voorbeeld alleen als stijlgids:\n' + example].filter(Boolean).join('\n\n');
+    const output = await window.desktop.writeText({ key: $('api-key').value, prompt: request, mode });
+    writingDrafts[mode].output = output;
+    if (writingMode === mode) $('copy-output').value = output;
+    if (!output) status('OpenAI heeft geen tekst teruggegeven.');
   } catch (error) { status(error.message); }
   finally { $('generate-text').disabled = false; }
 };
@@ -520,16 +508,16 @@ $('open-reference').onclick = async () => {
     changeVideoTemplate();
     $('video-template-name').value = '';
     $('video-template-topic').value = '';
-    $('video-template-import').open = false;
     status('Videotemplate bewaard.');
   } catch (error) { status(error.message); }
-  finally { importingTemplate = false; updateMontageAction(); }
+  finally { importingTemplate = false; updateMontageAction(); renderTemplateLibrary(); }
 };
 if (window.desktop?.listVideoTemplates) {
   window.desktop.listVideoTemplates().then(items => {
     const known = new Set(videoTemplates.map(item => item.id));
     videoTemplates.push(...items.filter(item => !known.has(item.id)));
     refreshVideoTemplates(templateSelect.value);
+    renderTemplateLibrary();
   }).catch(error => status(error.message));
 }
 
@@ -576,7 +564,9 @@ function refreshPublishPreview() {
   }, 'image/jpeg', .94);
 }
 $('go-publish').onclick = () => showTab('publish');
-$('import-caption').onclick = () => { $('publish-caption').value = $('copy-output').value; };
+$('import-caption').onclick = () => {
+  $('publish-caption').value = writingMode === 'caption' ? $('copy-output').value : writingDrafts.caption.output;
+};
 $('connect-social').onclick = async () => {
   if (!window.desktop) return status('Open de desktopapp om je accounts te koppelen.');
   const button = $('connect-social');
@@ -620,6 +610,220 @@ $('publish-post').onclick = async () => {
   finally { button.disabled = !accountsConnected; $('connect-social').disabled = false; }
 };
 
+const categoryTopics = { sale: 'Nieuw in verkoop', sold: 'Verkocht', open: 'Open huis', other: '' };
+const categoryNames = { sale: 'Verkoop', sold: 'Verkocht', open: 'Open huis', video: 'Video', documents: 'AI-documenten', other: 'Overig' };
+const builtInPrompts = [
+  { id: 'brochure', name: 'Woningbrochure', description: 'Beschrijving, kenmerken, indeling en omgeving.',
+    prompt: 'Maak een professionele woningbrochure voor WG Makelaars. Gebruik een korte introductie, woningkenmerken, indeling per verdieping, buitenruimte, ligging en een afsluiting over bezichtigen. Gebruik alleen de aangeleverde informatie en noem ontbrekende gegevens als invulpunten.' },
+  { id: 'proposal', name: 'Verkoopvoorstel', description: 'Een voorstel met verkoopaanpak, planning en afspraken.',
+    prompt: 'Schrijf een verkoopvoorstel namens WG Makelaars aan de eigenaar. Neem de woning, voorgestelde verkoopaanpak, marketing, bezichtigingen, planning en vervolgstappen op. Neem bedragen en afspraken alleen op als ze zijn aangeleverd. Gebruik invulpunten voor ontbrekende gegevens.' },
+  { id: 'viewing', name: 'Bezichtigingsverslag', description: 'Leg feedback, vragen en vervolgacties vast.',
+    prompt: 'Maak een beknopt bezichtigingsverslag voor intern gebruik bij WG Makelaars. Gebruik de woning, datum, aanwezigen, algemene indruk, vragen, aandachtspunten en afgesproken acties. Scheid feitelijke observaties van reacties en verzin geen details.' },
+  { id: 'open-house', name: 'Openhuisdraaiboek', description: 'Voorbereiding, taakverdeling en opvolging.',
+    prompt: 'Maak een praktisch draaiboek voor een open huis voor WG Makelaars. Werk voorbereiding, materialen, ontvangst, rondleiding, contactregistratie en opvolging uit. Gebruik de aangeleverde datum, locatie en taakverdeling. Markeer ontbrekende gegevens als invulpunten.' }
+];
+const documentPrompts = readLocal('wg-document-prompts', []);
+const writingDrafts = { caption: { prompt: '', output: '' }, document: { prompt: '', output: '' } };
+let writingMode = 'caption';
+let libraryCategory = 'sale';
+let editingPromptId;
+const categoryButtons = document.querySelectorAll('[data-category]');
+const modeButtons = document.querySelectorAll('[data-writing-mode]');
+
+function categoryFor(template) {
+  if (Object.hasOwn(categoryTopics, template.category)) return template.category;
+  if (['sale', 'sold', 'open'].includes(template.id)) return template.id;
+  const topic = template.topic.toLowerCase().replace(/[^a-z]/g, '');
+  if (topic.includes('openhuis')) return 'open';
+  if (topic.includes('verkocht')) return 'sold';
+  return /verkoop|tekoop/.test(topic) ? 'sale' : 'other';
+}
+
+function selectLibraryCategory(category) {
+  libraryCategory = category;
+  renderTemplateLibrary();
+}
+
+function openLibrary(category) {
+  selectLibraryCategory(category);
+  showTab('templates');
+}
+
+function openImageTemplate(template) {
+  $('topic').value = template.topic;
+  refreshTemplateOptions(template.topic, template.id);
+  showTab('design');
+}
+
+function libraryItem({ icon, name, description, use, edit, move }) {
+  const entry = document.createElement('div');
+  entry.className = 'library-item';
+  const symbol = document.createElement('i');
+  symbol.className = 'type-icon';
+  symbol.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + icons[icon] + '</svg>';
+  const label = document.createElement('div');
+  const title = document.createElement('strong');
+  const detail = document.createElement('small');
+  title.textContent = name;
+  detail.textContent = description;
+  label.append(title, detail);
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'secondary';
+  button.textContent = 'Gebruiken';
+  button.setAttribute('aria-label', name + ' gebruiken');
+  button.onclick = use;
+  actions.append(button);
+  if (edit) {
+    const update = document.createElement('button');
+    update.type = 'button';
+    update.className = 'secondary';
+    update.textContent = 'Wijzig';
+    update.setAttribute('aria-label', name + ' wijzigen');
+    update.onclick = edit;
+    actions.append(update);
+  }
+  if (move) {
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', name + ' verplaatsen');
+    setOptions(select, [['', 'Verplaatsen'], ...Object.keys(categoryTopics)
+      .filter(category => category !== libraryCategory).map(category => [category, categoryNames[category]])]);
+    select.onchange = async () => {
+      const destination = select.value;
+      if (!destination) return;
+      select.disabled = true;
+      await move(destination);
+    };
+    actions.append(select);
+  }
+  entry.append(symbol, label, actions);
+  return entry;
+}
+
+function renderTemplateLibrary() {
+  categoryButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.category === libraryCategory)));
+  $('library-heading').textContent = categoryNames[libraryCategory];
+  $('image-template-form').hidden = !Object.hasOwn(categoryTopics, libraryCategory);
+  $('video-library-form').hidden = libraryCategory !== 'video';
+  $('document-library-form').hidden = libraryCategory !== 'documents';
+  const rows = [];
+  if (libraryCategory === 'video') {
+    for (const item of videoTemplates) {
+      rows.push(libraryItem({ icon: 'video', name: item.name, description: item.topic || 'Voorbeeldvideo', use: () => {
+        if (makingMontage || importingTemplate) return status('Wacht tot de huidige videobewerking is voltooid.');
+        templateSelect.value = item.id;
+        changeVideoTemplate();
+        showTab('video');
+      } }));
+    }
+  } else if (libraryCategory === 'documents') {
+    for (const item of [...builtInPrompts, ...documentPrompts]) {
+      rows.push(libraryItem({ icon: 'sparkles', name: item.name, description: item.description || 'Eigen documentprompt',
+        use: () => useDocumentPrompt(item), edit: item.description ? null : () => editDocumentPrompt(item) }));
+    }
+  } else {
+    for (const item of templates.filter(item => categoryFor(item) === libraryCategory)) {
+      rows.push(libraryItem({ icon: 'image', name: item.name, description: item.topic,
+        use: () => openImageTemplate(item), move: item.file ? async destination => {
+          try {
+            const next = { ...item, category: destination };
+            await libraryRequest('readwrite', store => store.put(next));
+            item.category = destination;
+            renderTemplateLibrary();
+            status('Template verplaatst naar ' + categoryNames[destination] + '.');
+          } catch (error) {
+            renderTemplateLibrary();
+            status(error.message);
+          }
+        } : null }));
+    }
+  }
+  if (rows.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.textContent = libraryCategory === 'video' ? 'Voeg een voorbeeldvideo toe om dit als videotemplate te gebruiken.' : 'In deze categorie staan nog geen posttemplates.';
+    rows.push(empty);
+  }
+  $('library').replaceChildren(...rows);
+}
+
+function refreshDocumentPrompts() {
+  const current = $('document-prompt-select').value;
+  const items = [...builtInPrompts, ...documentPrompts];
+  setOptions($('document-prompt-select'), [['', 'Kies een documentprompt'], ...items.map(item => [item.id, item.name])]);
+  $('document-prompt-select').value = items.some(item => item.id === current) ? current : '';
+}
+
+function editDocumentPrompt(item) {
+  editingPromptId = item?.id;
+  $('document-template-name').value = item?.name || '';
+  $('document-template-prompt').value = item?.prompt || '';
+  $('document-form-heading').textContent = item ? 'Documentprompt wijzigen' : 'Documentprompt toevoegen';
+  $('cancel-document-template').hidden = !item;
+  if (item) $('document-template-name').focus();
+}
+
+function setWritingMode(mode) {
+  if (mode !== writingMode) {
+    writingDrafts[writingMode] = { prompt: $('prompt').value, output: $('copy-output').value };
+    writingMode = mode;
+    $('prompt').value = writingDrafts[mode].prompt;
+    $('copy-output').value = writingDrafts[mode].output;
+  }
+  const documentMode = mode === 'document';
+  $('caption-settings').hidden = documentMode;
+  ['document-settings', 'document-details-label', 'export-document'].forEach(id => { $(id).hidden = !documentMode; });
+  $('generate-text').textContent = documentMode ? 'Document genereren' : 'Tekst genereren';
+  $('output-heading').textContent = documentMode ? 'Conceptdocument' : 'Concepttekst';
+  modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.writingMode === mode)));
+}
+
+function useDocumentPrompt(item) {
+  setWritingMode('document');
+  $('document-prompt-select').value = item.id;
+  $('document-title').value = item.name;
+  $('prompt').value = item.prompt;
+  showTab('text');
+  $('document-details').focus();
+}
+
+categoryButtons.forEach(button => button.onclick = () => selectLibraryCategory(button.dataset.category));
+modeButtons.forEach(button => button.onclick = () => setWritingMode(button.dataset.writingMode));
+$('show-video-library').onclick = () => openLibrary('video');
+$('show-document-library').onclick = () => openLibrary('documents');
+$('document-prompt-select').onchange = () => {
+  const item = [...builtInPrompts, ...documentPrompts].find(item => item.id === $('document-prompt-select').value);
+  if (item) useDocumentPrompt(item);
+};
+$('cancel-document-template').onclick = () => editDocumentPrompt();
+$('save-document-template').onclick = () => {
+  const name = $('document-template-name').value.trim();
+  const prompt = $('document-template-prompt').value.trim();
+  if (!name || !prompt) return status('Vul een naam en prompt in.');
+  const item = { id: editingPromptId || crypto.randomUUID(), name, prompt };
+  const next = editingPromptId ? documentPrompts.map(saved => saved.id === editingPromptId ? item : saved) : [...documentPrompts, item];
+  try {
+    localStorage.setItem('wg-document-prompts', JSON.stringify(next));
+    documentPrompts.splice(0, documentPrompts.length, ...next);
+    editDocumentPrompt();
+    refreshDocumentPrompts();
+    renderTemplateLibrary();
+    status('Documentprompt opgeslagen.');
+  } catch (error) { status(error.message); }
+};
+$('export-document').onclick = async () => {
+  const body = $('copy-output').value.trim();
+  if (!body) return status('Maak of plak eerst een conceptdocument.');
+  if (!window.desktop) return status('Open de desktopapp om een document op te slaan.');
+  try {
+    if (await window.desktop.saveDocument({ title: $('document-title').value.trim(), body })) status('Word-compatibel document opgeslagen.');
+  } catch (error) { status(error.message); }
+};
+
+refreshDocumentPrompts();
+setWritingMode('caption');
 showTab('design');
 refreshLibrary();
 loadImage('voorbeeldwoning.jpg').then(image => {
