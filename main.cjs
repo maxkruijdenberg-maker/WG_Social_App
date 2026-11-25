@@ -127,7 +127,7 @@ ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, add
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
   const token = await keyStore().requireKey();
   const assets = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui');
-  const graphics = animateCards ? { address, city, contact, badge: showLogo ? path.join(assets, 'video-badge.png') : undefined } : undefined;
+  const graphics = animateCards ? { address, city, contact } : undefined;
   const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
     showLogo ? path.join(assets, 'icon.png') : undefined, graphics);
   if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
