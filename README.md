@@ -4,7 +4,7 @@ Windows-desktopapp van WG Makelaars voor vastgoedposts, video en publicatie op s
 
 ## Openen op Windows
 
-Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** met het WG-logo op je bureaublad en in het Startmenu. De app opent in volledig scherm. Rechtsboven sluit je de app met **App afsluiten**.
+Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** met het WG-logo op je bureaublad en in het Startmenu. De app opent gemaximaliseerd binnen het Windows-bureaublad, met de taakbalk en de standaard vensterknoppen.
 
 Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip) volledig uitpakken en **WG Social Studio.exe** openen. Houd dan de uitgepakte bestanden bij elkaar.
 
@@ -18,10 +18,12 @@ Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_
 
 ## Facebook en Instagram
 
-1. Koppel een professioneel Instagram-account aan je Facebook-pagina. Gebruik een Meta-paginatoegangstoken dat die pagina mag beheren en publiceren, inclusief `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic` en `instagram_content_publish` waar vereist door je Meta-app. Meta kan aanvullende goedkeuring of een app-rol vereisen.
-2. Vul op het tabblad **Publiceren** het Facebook-pagina-ID en paginatoegangstoken in. Kies **Accounts koppelen** en controleer beide namen. Het token blijft in het geheugen tot je de app sluit.
-3. Vul je Cloudinary-cloudnaam en een **unsigned** afbeeldingsuploadpreset in. De app uploadt de uiteindelijke afbeelding als openbare JPEG, zodat Instagram die zelf kan ophalen. De afbeelding blijft in je Cloudinary-account staan.
-4. Controleer de preview en het bijschrift en kies **Publiceer op beide**. Kies een Instagram-feedformaat van 4:5, vierkant of 1,91:1. De app toont het resultaat voor elk account. Als één platform faalt, controleer beide accounts voordat je de post elders opnieuw plaatst.
+1. Koppel in **Meta Business Suite → Instellingen** je professionele Instagram-account (Business of Creator) aan je Facebook-pagina. Gebruik een account met toegang om content op die pagina te plaatsen. [Meta Business Suite](https://business.facebook.com/)
+2. Open **Graph API Explorer**, selecteer je Meta-app die Facebook Login en Instagram API met Facebook Login gebruikt, en genereer een **gebruikerstoken** met `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic` en `instagram_content_publish`. Je Meta-app kan een app-rol of aanvullende goedkeuring nodig hebben. [Graph API Explorer](https://developers.facebook.com/tools/explorer/) · [Instagram API met Facebook Login](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/)
+3. Voer in de Explorer een **GET** uit op `/me/accounts?fields=id,name,access_token`. Zoek de juiste Facebook-pagina. Kopieer haar `id` en het `access_token` dat bij die pagina staat. Dit is het **paginatoegangstoken** dat WG Social Studio nodig heeft. Bewaar en deel het token als een wachtwoord.
+4. Ga in WG Social Studio naar **Publiceren → Accounts koppelen**. Vul het **Facebook-pagina-ID** en **Meta-paginatoegangstoken** in. Klik op **Accounts koppelen** en controleer de paginanaam en Instagram-gebruikersnaam. De app bewaart het token in het geheugen tot je de app sluit.
+5. Vul voor het publiceren van afbeeldingsposts je **Cloudinary-cloudnaam** en een **unsigned** afbeeldingsuploadpreset in. Instagram haalt de JPEG op via een openbare HTTPS-link. De afbeelding blijft in je Cloudinary-account staan. [Cloudinary-uploadpresets](https://cloudinary.com/documentation/upload_presets)
+6. Controleer de preview en het bijschrift en klik op **Publiceer op beide**. Gebruik een Instagram-feedformaat van 4:5, vierkant of 1,91:1. Controleer het resultaat per account.
 
 ## Ontwikkelen
 

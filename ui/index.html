@@ -21,7 +21,7 @@
   <div class="side-bottom"><span>WG</span><div><strong>WG Makelaars</strong><small>Lokale werkruimte</small></div></div>
 </aside>
 <main>
-  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><div class="actions"><button class="secondary" id="export-image"><i data-icon="download"></i> Download PNG</button><button class="primary" id="go-publish"><i data-icon="send"></i> Publiceren</button><button class="secondary" id="close-window" hidden><i data-icon="close"></i> App afsluiten</button></div></header>
+  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><div class="actions"><button class="secondary" id="export-image"><i data-icon="download"></i> Download PNG</button><button class="primary" id="go-publish"><i data-icon="send"></i> Publiceren</button></div></header>
   <section id="design" class="screen design">
     <div class="workspace">
       <div class="workspace-bar"><strong>Voorvertoning</strong><label><span class="sr-only">Formaat</span><select id="format"><option value="1080x1080">Instagram · 1:1</option><option value="1080x1350">Instagram · 4:5</option><option value="1080x1920">Story · 9:16</option><option value="1200x628">Facebook · 1.91:1</option></select></label></div>
@@ -158,6 +158,15 @@
         <label>Meta-paginatoegangstoken<input type="password" id="page-token" autocomplete="off" placeholder="Toegangstoken van je Facebook-pagina"></label>
         <button class="secondary" id="connect-social">Accounts koppelen</button>
         <p id="connection-status" class="hint" role="status">Koppel een Facebook-pagina met een professioneel Instagram-account.</p>
+        <details>
+          <summary>Hoe koppel ik mijn accounts?</summary>
+          <ol class="hint">
+            <li>Koppel in Meta Business Suite je professionele Instagram-account aan je Facebook-pagina.</li>
+            <li>Haal in Meta for Developers het pagina-ID en paginatoegangstoken op met de publicatierechten voor Facebook en Instagram.</li>
+            <li>Vul het ID en token hierboven in. Klik op <strong>Accounts koppelen</strong> en controleer de twee namen.</li>
+            <li>Vul voor publicatie ook je Cloudinary-cloudnaam en openbare uploadpreset in.</li>
+          </ol>
+        </details>
         <hr>
         <h3>Afbeelding beschikbaar maken</h3>
         <p class="hint">Instagram haalt de afbeelding op via een openbare HTTPS-link. De app uploadt de post daarvoor naar je Cloudinary-account.</p>

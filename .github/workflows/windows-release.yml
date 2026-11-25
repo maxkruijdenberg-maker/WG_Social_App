@@ -32,7 +32,7 @@ jobs:
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
           & $compiler "/DAppVersion=$version" scripts/windows-setup.iss
           if ($LASTEXITCODE -ne 0) { throw 'Could not compile the Windows installer' }
-      - name: Verify Windows shortcuts
+      - name: Verify Windows shortcuts and startup window
         shell: pwsh
         run: |
           $installer = Start-Process -FilePath dist/WG-Social-Studio-Setup.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru
@@ -60,6 +60,13 @@ jobs:
           }
           if ($targets[0] -ne $targets[1]) {
             throw 'The shortcuts point to different executables'
+          }
+          $studio = Start-Process -FilePath $targets[0] -ArgumentList '--inspect=127.0.0.1:9229' -PassThru
+          try {
+            node scripts/verify-windows-window.cjs http://127.0.0.1:9229/json/list
+            if ($LASTEXITCODE -ne 0) { throw 'Installed window check failed' }
+          } finally {
+            Stop-Process -Id $studio.Id -ErrorAction SilentlyContinue
           }
       - name: Publish Windows installer and ZIP
         shell: pwsh

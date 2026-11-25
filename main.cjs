@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
@@ -25,16 +25,18 @@ function pickVideo() {
 
 function createWindow() {
   const window = new BrowserWindow({
-    ...screen.getPrimaryDisplay().bounds,
-    fullscreen: true,
-    frame: false,
+    width: 1470, height: 980, minWidth: 880, minHeight: 640,
+    show: false,
     backgroundColor: '#f2f5fa', autoHideMenuBar: true,
     icon: path.join(__dirname, 'ui', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true }
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());
-  window.on('leave-full-screen', () => window.setFullScreen(true));
+  window.once('ready-to-show', () => {
+    window.maximize();
+    window.show();
+  });
   window.loadFile('ui/index.html');
 }
 
@@ -109,10 +111,6 @@ ipcMain.handle('save-document', async (_, { title, body }) => {
   if (canceled) return false;
   await writeFile(filePath, createRtf(documentTitle, body), 'utf8');
   return true;
-});
-
-ipcMain.handle('close-window', event => {
-  BrowserWindow.fromWebContents(event.sender)?.close();
 });
 
 function videoLibraryPath() {
