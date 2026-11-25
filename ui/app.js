@@ -411,7 +411,7 @@ function showVideo(which) {
   $('view-montage').setAttribute('aria-pressed', String(visible.montage));
 }
 
-function resetMontage() {
+function resetMontage(clearFeedback = true) {
   if (montageUrl) {
     montagePlayer.pause();
     montagePlayer.removeAttribute('src');
@@ -419,6 +419,12 @@ function resetMontage() {
     URL.revokeObjectURL(montageUrl);
   }
   montageUrl = undefined;
+  if (clearFeedback) {
+    $('montage-feedback').hidden = true;
+    $('montage-feedback-input').value = '';
+    $('montage-feedback-log').replaceChildren();
+    $('montage-feedback-log').hidden = true;
+  }
   $('view-montage').hidden = $('montage-summary').hidden = true;
   $('montage-status').textContent = 'De download wordt beschikbaar zodra je montage klaar is.';
   $('view-source').hidden = !videoUrl;
@@ -433,6 +439,7 @@ function updateMontageAction() {
   $('preview-template').disabled = active;
   $('generate-montage').disabled = active || !videoUrl || !activeVideoTemplate;
   $('save-montage').disabled = active || !montageUrl;
+  $('montage-feedback-input').disabled = $('revise-montage').disabled = active || !montageUrl;
 }
 
 function chooseVideoTemplate(template) {
@@ -504,6 +511,16 @@ $('video-contact').onchange = () => {
   catch (error) { status(error.message); }
 };
 
+function showMontageResult(result, clearFeedback) {
+  resetMontage(clearFeedback);
+  montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
+  montagePlayer.src = montageUrl;
+  $('montage-summary').textContent = result.summary;
+  ['view-source', 'view-montage', 'montage-summary', 'montage-feedback'].forEach(id => { $(id).hidden = false; });
+  $('montage-status').textContent = 'Montage klaar. Download de MP4 of typ hieronder wat je wilt aanpassen.';
+  showVideo('montage');
+}
+
 $('generate-montage').onclick = async () => {
   makingMontage = true;
   updateMontageAction();
@@ -519,19 +536,45 @@ $('generate-montage').onclick = async () => {
       city: $('video-city').value,
       contact: $('video-contact').value
     });
-    resetMontage();
-    montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
-    montagePlayer.src = montageUrl;
-    $('montage-summary').textContent = result.summary;
-    ['view-source', 'view-montage', 'montage-summary'].forEach(id => { $(id).hidden = false; });
-    feedback.textContent = 'Montage klaar. Klik op Download MP4 om je video op te slaan.';
-    showVideo('montage');
+    showMontageResult(result, true);
   } catch (error) { feedback.textContent = desktopError(error); }
   finally {
     makingMontage = false;
     updateMontageAction();
   }
 };
+$('montage-feedback-form').onsubmit = async event => {
+  event.preventDefault();
+  const input = $('montage-feedback-input');
+  const text = input.value.trim();
+  if (input.disabled || !text) return;
+  makingMontage = true;
+  updateMontageAction();
+  const status = $('montage-status');
+  status.textContent = 'Je wijziging wordt verwerkt…';
+  try {
+    const result = await window.desktop.reviseMontage(text);
+    showMontageResult(result, false);
+    const item = document.createElement('li');
+    const instruction = document.createElement('strong');
+    instruction.textContent = text;
+    const description = document.createElement('span');
+    description.textContent = result.summary;
+    item.append(instruction, description);
+    const log = $('montage-feedback-log');
+    log.append(item);
+    log.hidden = false;
+    log.scrollTop = log.scrollHeight;
+    input.value = '';
+  } catch (error) {
+    status.textContent = desktopError(error);
+  } finally {
+    makingMontage = false;
+    updateMontageAction();
+    input.focus();
+  }
+};
+
 $('save-montage').onclick = async () => {
   savingMontage = true;
   updateMontageAction();

@@ -1,15 +1,15 @@
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const n = value => Number(value.toFixed(8));
 
-function makeWgTimeline(duration, suggestedEnd, points) {
+function makeWgTimeline(duration, suggestedEnd, points, style) {
   const end = Number.isFinite(suggestedEnd)
     ? clamp(suggestedEnd, Math.min(duration, Math.max(4, duration * .55)), duration)
     : duration;
-  if (end <= 24) return { end, duration: end, expression: 'PTS' };
-
-  const opening = 2;
+  const target = Math.max(3, style.targetSeconds - style.cardSeconds);
+  const opening = Math.min(style.openingSeconds, Math.max(.25, end - 1.8));
+  if (end <= target || end - opening < 1.8) return { end, duration: end, expression: 'PTS' };
   const closing = end - 1.3;
-  const middle = [{ time: 2.45, weight: 1 }, ...(Array.isArray(points) ? points : []),
+  const middle = [{ time: opening + .45, weight: 1 }, ...(Array.isArray(points) ? points : []),
     { time: closing - .45, weight: 1 }].filter(point => Number.isFinite(point?.time) && Number.isFinite(point?.weight)
       && point.time > opening && point.time < closing)
     .slice(0, 14).sort((a, b) => a.time - b.time);
@@ -30,7 +30,7 @@ function makeWgTimeline(duration, suggestedEnd, points) {
   let low = 0, high = 2;
   for (let i = 0; i < 28; i++) {
     const middle = (low + high) / 2;
-    if (total(paces(middle)) < 24) low = middle;
+    if (total(paces(middle)) < target) low = middle;
     else high = middle;
   }
   const pace = paces((low + high) / 2);
@@ -46,7 +46,7 @@ function makeWgTimeline(duration, suggestedEnd, points) {
   }
   let expression = n(outputTime) + '+(T-' + n(closing) + ')';
   for (const { stop, formula } of pieces.reverse()) expression = 'if(lt(T,' + n(stop) + '),' + formula + ',' + expression + ')';
-  return { end, duration: total(pace), expression: "'if(lt(T,2),T," + expression + ")/TB'" };
+  return { end, duration: total(pace), expression: "'if(lt(T," + n(opening) + "),T," + expression + ")/TB'" };
 }
 
 module.exports = { makeWgTimeline };

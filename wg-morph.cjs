@@ -1,17 +1,16 @@
 const { open } = require('node:fs/promises');
 const path = require('node:path');
 
-const BLUE = Buffer.from([14, 39, 59, 255]);
 const ease = value => value * value * (3 - 2 * value);
 const lerp = (a, b, t) => a + (b - a) * t;
 
-function fillShape(frame, width, height, x, y, w, h, roof) {
+function fillShape(frame, width, height, x, y, w, h, roof, fill) {
   const bottom = Math.min(height, Math.round(y + h));
   for (let row = Math.max(0, Math.ceil(y)); row < bottom; row++) {
     const inset = roof && row < y + roof ? (w / 2) * (1 - (row - y) / roof) : 0;
     const left = Math.max(0, Math.ceil(x + inset));
     const right = Math.min(width, Math.floor(x + w - inset));
-    if (right > left) frame.fill(BLUE, (row * width + left) * 4, (row * width + right) * 4);
+    if (right > left) frame.fill(fill, (row * width + left) * 4, (row * width + right) * 4);
   }
 }
 
@@ -27,7 +26,7 @@ function paintLogo(frame, width, source, x, y, size) {
   }
 }
 
-async function renderWgMorph(run, binary, directory, layout, showLogo, fps, duration) {
+async function renderWgMorph(run, binary, directory, layout, showLogo, fps, duration, style) {
   const { width, height, margin, introWidth, introHeight, introLogoSize, outroLogoSize } = layout;
   const logo = showLogo ? (await run(binary, ['-v', 'error', '-i', 'logo.png', '-frames:v', '1', '-vf', 'scale=256:256',
     '-pix_fmt', 'rgba', '-f', 'rawvideo', '-threads', '1', 'pipe:1'], directory)).stdout : null;
@@ -43,6 +42,8 @@ async function renderWgMorph(run, binary, directory, layout, showLogo, fps, dura
   const badgeLogoY = height - margin - badgeLogo - badgeWidth * .11;
   const introTop = height - margin - introHeight;
   const textStart = showLogo ? introLogoSize + 2 * margin : margin;
+  const rgba = (left, right, t) => Buffer.from([0, 2, 4].map(index => Math.round(
+    lerp(parseInt(left.slice(index, index + 2), 16), parseInt(right.slice(index, index + 2), 16), t))).concat(255));
   const pixels = Buffer.alloc(width * height * 4);
 
   async function sequence(name, count, draw) {
@@ -62,7 +63,7 @@ async function renderWgMorph(run, binary, directory, layout, showLogo, fps, dura
     const h = lerp(introHeight, badgeHeight, t);
     const y = height - margin - h;
     const roof = badgeHeight * .31 * ease(Math.max(0, (t - .35) / .65));
-    fillShape(pixels, width, height, margin, y, w, h, roof);
+    fillShape(pixels, width, height, margin, y, w, h, roof, rgba(style.introColor, style.houseColor, t));
     const right = Math.floor(Math.min(w, introWidth) - margin / 2);
     if (right > textStart) {
       for (let row = 0; row < introHeight; row++) {
@@ -77,7 +78,7 @@ async function renderWgMorph(run, binary, directory, layout, showLogo, fps, dura
   });
   await sequence('house-out.rgba', outroFrames, t => {
     fillShape(pixels, width, height, lerp(margin, 0, t), lerp(badgeTop, 0, t),
-      lerp(badgeWidth, width, t), lerp(badgeHeight, height, t), lerp(badgeHeight * .31, 0, t));
+      lerp(badgeWidth, width, t), lerp(badgeHeight, height, t), lerp(badgeHeight * .31, 0, t), rgba(style.houseColor, style.outroColor, t));
     paintLogo(pixels, width, logo, lerp(badgeLogoX, (width - outroLogoSize) / 2, t),
       lerp(badgeLogoY, Math.floor(height * .08 / 2) * 2, t), lerp(badgeLogo, outroLogoSize, t));
   });

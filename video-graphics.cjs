@@ -2,7 +2,6 @@ const { copyFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { renderWgMorph } = require('./wg-morph.cjs');
 
-const palette = { primary: '0E273B', accent: 'AC9564', text: 'FFFFFF' };
 const even = value => Math.max(2, 2 * Math.floor(value / 2));
 const seconds = value => Number(value).toFixed(3);
 
@@ -48,10 +47,10 @@ async function renderCard(run, binary, cwd, card) {
   if (result.code !== 0) throw new Error('Het titel- of contactblok kon niet worden gerenderd. ' + result.stderr.trim().slice(-350));
 }
 
-async function addVideoGraphics(run, binary, cwd, info, details, showLogo) {
+async function addVideoGraphics(run, binary, cwd, info, details, showLogo, style) {
   await installFont(cwd);
   const { width, height, duration, fps } = info;
-  const { primary, accent, text: foreground } = palette;
+  const { introColor, outroColor, accentColor: accent, textColor: foreground } = style;
   const address = clean(details.address, 100) || 'Woning in beeld';
   const city = clean(details.city, 65);
   const contact = typeof details.contact === 'string' ? details.contact.split(/\r?\n/)
@@ -64,10 +63,10 @@ async function addVideoGraphics(run, binary, cwd, info, details, showLogo) {
   const introX = showLogo ? introLogoSize + 2 * margin : margin;
   const leftText = { x: introX, maxWidth: introWidth - introX - margin };
   const outroLogoSize = even(unit * .27);
-  const colorSettings = { background: primary, accent, foreground };
+  const colorSettings = { accent, foreground };
 
   await renderCard(run, binary, cwd, {
-    label: 'intro', width: introWidth, height: introHeight, ...colorSettings,
+    label: 'intro', width: introWidth, height: introHeight, background: introColor, ...colorSettings,
     logo: showLogo ? { width: introLogoSize, x: margin, y: even((introHeight - introLogoSize) / 2) } : null,
     stripe: { x: introX, y: even(introHeight * .83), width: even(introWidth * .11), height: even(unit * .004) },
     lines: [
@@ -77,7 +76,7 @@ async function addVideoGraphics(run, binary, cwd, info, details, showLogo) {
   });
 
   await renderCard(run, binary, cwd, {
-    label: 'outro', width, height, ...colorSettings,
+    label: 'outro', width, height, background: outroColor, ...colorSettings,
     logo: showLogo ? { width: outroLogoSize, x: '(W-w)/2', y: even(height * .08) } : null,
     stripe: { x: even(width * .40), y: even(height * .28), width: even(width * .20), height: even(unit * .005) },
     lines: [
@@ -89,14 +88,14 @@ async function addVideoGraphics(run, binary, cwd, info, details, showLogo) {
   });
 
   const layout = { width, height, margin, introWidth, introHeight, introLogoSize, outroLogoSize };
-  const { introDuration, outroDuration } = await renderWgMorph(run, binary, cwd, layout, showLogo, fps, duration);
+  const { introDuration, outroDuration } = await renderWgMorph(run, binary, cwd, layout, showLogo, fps, duration, style);
   const outroStart = duration - outroDuration;
-  const introStart = Math.max(0, Math.min(2.78, outroStart - introDuration));
+  const introStart = Math.max(0, Math.min(style.introSeconds, outroStart - introDuration));
   const rawInput = filename => ['-f', 'rawvideo', '-pixel_format', 'rgba', '-video_size',
     width + 'x' + height, '-framerate', String(fps), '-i', filename];
-  const padded = 2.6;
+  const padded = style.cardSeconds;
   const graph = [
-    '[0:v]tpad=stop_mode=clone:stop_duration=2.65[base]',
+    '[0:v]tpad=stop_mode=clone:stop_duration=' + seconds(padded + .08) + '[base]',
     '[base][1:v]overlay=x=' + margin + ':y=H-h-' + margin + ":enable='lt(t," + seconds(introStart) + ")'[intro]",
     '[3:v]setpts=PTS+' + seconds(introStart) + '/TB[morphin]',
     "[intro][morphin]overlay=0:0:enable='between(t," + seconds(introStart) + ',' + seconds(outroStart) + ")'[house]",

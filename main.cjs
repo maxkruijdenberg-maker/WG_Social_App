@@ -127,10 +127,22 @@ ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, add
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
   const token = await keyStore().requireKey();
   const assets = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui');
-  const graphics = animateCards ? { address, city, contact } : undefined;
-  const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
-    showLogo ? path.join(assets, 'icon.png') : undefined, graphics);
-  if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
+  const graphics = animateCards ? { address, city, contact, showLogo } : undefined;
+  const logo = showLogo || graphics ? path.join(assets, 'icon.png') : undefined;
+  const { plan, ...result } = await createMontage(ffmpegBinary(), source, reference.file, prompt, token, logo, graphics);
+  if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file, prompt, logo, graphics, plan };
+  return result;
+});
+
+ipcMain.handle('revise-montage', async (_, feedback) => {
+  const previous = montage;
+  const text = typeof feedback === 'string' ? feedback.trim().slice(0, 3000) : '';
+  if (!previous || previous.source !== selectedVideo) throw new Error('Maak eerst een montage van deze video.');
+  if (!text) throw new Error('Typ wat je aan de montage wilt aanpassen.');
+  const token = await keyStore().requireKey();
+  const { plan, ...result } = await createMontage(ffmpegBinary(), previous.source, previous.reference, previous.prompt,
+    token, previous.logo, previous.graphics, { feedback: text, plan: previous.plan });
+  if (montage === previous) montage = { ...previous, bytes: result.bytes, plan };
   return result;
 });
 

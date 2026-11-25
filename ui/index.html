@@ -127,6 +127,16 @@
         <p class="hint" id="montage-status" role="status">De download wordt beschikbaar zodra je montage klaar is.</p>
         </div>
         <p id="montage-summary" class="hint" hidden></p>
+        <section id="montage-feedback" class="montage-feedback" aria-label="Montage bijsturen" hidden>
+          <ul id="montage-feedback-log" aria-label="Verwerkte wijzigingen" hidden></ul>
+          <form id="montage-feedback-form">
+            <label for="montage-feedback-input">Wat wil je aanpassen?</label>
+            <div class="actions">
+              <input id="montage-feedback-input" type="text" maxlength="3000" placeholder="Bijvoorbeeld: maak de adresbalk oranje">
+              <button class="primary" id="revise-montage" type="submit">Pas montage aan</button>
+            </div>
+          </form>
+        </section>
         <details>
           <summary>Handmatig een fragment knippen</summary>
           <div class="row"><label>Begin (seconden)<input type="number" id="video-start" min="0" step=".01" value="0"></label><label>Einde (seconden)<input type="number" id="video-end" min="0" step=".01" value="0"></label></div>
@@ -143,7 +153,7 @@
         <p class="hint" id="active-video-template">Nog geen template gekozen.</p>
         <div class="actions"><button class="secondary" id="show-video-library">Kies in templatebibliotheek</button><button class="secondary" id="preview-template" aria-pressed="false" hidden>Voorbeeld bekijken</button></div>
         <hr>
-        <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Bijvoorbeeld: versnel het pad naar de voordeur, houd de hal rustig en behoud de laatste draai in de tuin."></textarea></label>
+        <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Bijvoorbeeld: maak de adresbalk oranje en houd de hal rustig."></textarea></label>
         <p class="hint ai-key-link" hidden>OpenAI-sleutel nodig. <button class="secondary" type="button" data-open-settings>API-sleutel instellen</button></p>
         <label class="check"><input type="checkbox" id="video-cards" checked> Vast WG-woningtourtemplate toepassen</label>
         <div id="video-card-details">

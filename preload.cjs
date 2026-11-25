@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('desktop', {
   importVideoTemplate: fields => ipcRenderer.invoke('import-video-template', fields),
   previewVideoTemplate: id => ipcRenderer.invoke('preview-video-template', id),
   generateMontage: options => ipcRenderer.invoke('generate-montage', options),
+  reviseMontage: feedback => ipcRenderer.invoke('revise-montage', feedback),
   saveMontage: () => ipcRenderer.invoke('save-montage'),
   apiKeyStatus: () => ipcRenderer.invoke('api-key-status'),
   saveApiKey: key => ipcRenderer.invoke('save-api-key', key),
