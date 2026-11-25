@@ -103,7 +103,7 @@
         <label id="document-details-label" hidden>Gegevens en notities<textarea id="document-details" rows="4" maxlength="16000" placeholder="Plak hier de woninggegevens, namen en andere informatie voor dit document."></textarea></label>
         <div class="actions"><button id="generate-text" class="primary">Tekst genereren</button><button id="save-caption-draft" class="secondary">Instructie opslaan als prompt</button></div>
       </article>
-      <article class="card"><h3 id="output-heading">Concepttekst</h3><label class="sr-only" for="copy-output">Concept</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je concept. Je kunt het direct aanpassen."></textarea>
+      <article class="card"><h3 id="output-heading">Concepttekst</h3><p class="hint" id="writing-model-status" role="status" hidden></p><label class="sr-only" for="copy-output">Concept</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je concept. Je kunt het direct aanpassen."></textarea>
         <div class="actions"><button class="secondary" id="copy-text">Tekst kopiëren</button><button class="primary" id="export-document" hidden>Opslaan voor Word (.rtf)</button></div>
       </article>
     </div>
@@ -172,6 +172,13 @@
         </div>
       </form>
       <p class="hint" id="api-key-status" role="status"></p>
+      <hr>
+      <label>OpenAI-model<select id="ai-model-preference">
+        <option value="auto">Automatisch · Sol voor tekst, Astra voor video</option>
+        <option value="astra">GPT‑6.2 Astra</option>
+        <option value="sol">GPT‑6.2 Sol</option>
+      </select></label>
+      <p class="hint">Gebruik je voorkeur voor tekst, documenten en videoanalyse. Bij ontbrekende modeltoegang kiest de app een beschikbaar terugvalmodel.</p>
     </article>
   </section>
   <div id="status" role="status" hidden></div>

@@ -2,7 +2,7 @@ const { spawn } = require('node:child_process');
 const { copyFile, mkdtemp, readFile, writeFile, rm } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
-const { requestText } = require('./openai.cjs');
+const { requestWithModel } = require('./openai.cjs');
 const { makeWgTimeline } = require('./wg-timeline.cjs');
 const { addVideoGraphics } = require('./video-graphics.cjs');
 
@@ -99,7 +99,7 @@ function segmentArguments(input, output, plan, segment, logo) {
     '-preset', 'fast', '-crf', '19', '-pix_fmt', 'yuv420p', output];
 }
 
-async function createMontage(binary, input, reference, prompt, token, logo, graphics) {
+async function createMontage(binary, input, reference, prompt, token, logo, graphics, modelPreference) {
   const directory = await mkdtemp(path.join(tmpdir(), 'wg-montage-'));
   const sourceName = 'input' + path.extname(input).toLowerCase();
   const referenceName = 'reference' + path.extname(reference).toLowerCase();
@@ -134,15 +134,7 @@ async function createMontage(binary, input, reference, prompt, token, logo, grap
       ] }],
       text: { format: { type: 'json_schema', name: 'montage', strict: true, schema } }
     };
-    let text;
-    let model = 'GPT-5.4';
-    try {
-      text = await requestText(token, { ...request, model: 'gpt-5.4', reasoning: { effort: 'high' } }, 240000);
-    } catch (error) {
-      if (error.code !== 'OPENAI_MODEL_UNAVAILABLE') throw error;
-      text = await requestText(token, request, 120000);
-      model = 'GPT-4.1 mini';
-    }
+    const { text, model, fallback } = await requestWithModel(token, request, { preference: modelPreference, video: true });
     let plan;
     try { plan = JSON.parse(text); }
     catch { throw new Error('OpenAI gaf geen leesbaar montageplan terug. Probeer een kortere instructie.'); }
@@ -172,8 +164,9 @@ async function createMontage(binary, input, reference, prompt, token, logo, grap
     const output = graphics
       ? await addVideoGraphics(runFfmpeg, binary, directory, montageInfo, graphics, Boolean(logoName))
       : 'montage.mp4';
-    return { bytes: await readFile(path.join(directory, output)),
-      summary: graphics ? 'WG-woningtour met vloeiende versnellingen en uitvouwend huisje. Analyse met ' + model + '.' : plan.summary };
+    const summary = graphics ? 'WG-woningtour met vloeiende versnellingen en uitvouwend huisje.' : plan.summary;
+    const analysis = ' Analyse met ' + model + (fallback ? ' (terugvalmodel).' : '.');
+    return { bytes: await readFile(path.join(directory, output)), summary: summary + analysis };
 
   } catch (error) {
     if (error.code === 'ENOSPC') throw new Error('Er is te weinig vrije schijfruimte voor de videomontage.');

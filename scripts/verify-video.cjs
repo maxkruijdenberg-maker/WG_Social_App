@@ -3,6 +3,7 @@ const { copyFile, mkdtemp, rm, writeFile } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('../montage.cjs');
+const { requestWithModel } = require('../openai.cjs');
 
 async function verify() {
   const binary = path.resolve(process.argv[2]);
@@ -16,19 +17,26 @@ async function verify() {
     assert.equal(fixture.code, 0, fixture.stderr);
     await copyFile(path.join(directory, 'fixture.mp4'), source);
     await copyFile(path.join(directory, 'fixture.mp4'), reference);
-    let attempt = 0;
     global.fetch = async (_url, options) => {
-      attempt += 1;
       const payload = JSON.parse(options.body);
+      assert.equal(payload.model, 'gpt-6.2-sol');
+      assert.equal(payload.input, 'Schrijf een bijschrift.');
+      return Response.json({ output: [{ content: [{ type: 'output_text', text: 'Testbijschrift' }] }] });
+    };
+    assert.deepEqual(await requestWithModel('test', { input: 'Schrijf een bijschrift.' }),
+      { text: 'Testbijschrift', model: 'GPT‑6.2 Sol', fallback: false });
+    const attempts = [];
+    global.fetch = async (_url, options) => {
+      const payload = JSON.parse(options.body);
+      attempts.push(payload.model);
       const images = payload.input[0].content.filter(item => item.type === 'input_image');
       assert.ok(images.length > 6);
       assert.ok(images.some(item => item.detail === 'high'));
-      if (attempt === 1) {
-        assert.equal(payload.model, 'gpt-5.4');
-        assert.equal(payload.reasoning.effort, 'high');
+      assert.equal(payload.reasoning.effort, 'high');
+      if (payload.model === 'gpt-6.2-astra') {
         return Response.json({error:{code:'model_not_found'}}, {status:404});
       }
-      assert.equal(payload.model, 'gpt-4.1-mini');
+      assert.equal(payload.model, 'gpt-6.2-sol');
       assert.ok(images.every(item => item.image_url.startsWith('data:image/jpeg;base64,')));
       return Response.json({ output: [{ content: [{ type: 'output_text', text: JSON.stringify({
         segments: [], format: 'source', brightness: 0, saturation: 1, mute: true, summary: 'WG-woningtour.',
@@ -38,7 +46,8 @@ async function verify() {
     const result = await createMontage(binary, source, reference, 'Maak twee korte fragmenten.', 'test', logo, {
       address: 'Parklaan 24', city: 'Voorbeeldstad', contact: '0123 456 789\ncontact@example.com\nwww.example.com'
     });
-    assert.equal(attempt, 2);
+    assert.deepEqual(attempts, ['gpt-6.2-astra', 'gpt-6.2-sol']);
+    assert.match(result.summary, /GPT‑6\.2 Sol \(terugvalmodel\)/);
     assert.equal(result.bytes.subarray(4, 8).toString(), 'ftyp');
     await writeFile(path.join(directory, 'output.mp4'), result.bytes);
     const video = await runFfmpeg(binary, ['-hide_banner', '-i', 'output.mp4', '-f', 'null', '-'], directory);

@@ -273,10 +273,13 @@ $('generate-text').onclick = async () => {
         'Aangeleverde gegevens en notities: ' + ($('document-details').value.trim() || 'Geen aanvullende gegevens.')].join('\n\n')
       : ['Onderwerp: ' + $('copy-topic').value, 'Opdracht: ' + prompt,
         example && 'Gebruik dit voorbeeld alleen als stijlgids:\n' + example].filter(Boolean).join('\n\n');
-    const output = await window.desktop.writeText({ prompt: request, mode });
-    writingDrafts[mode].output = output;
-    if (writingMode === mode) $('copy-output').value = output;
-    if (!output) status('OpenAI heeft geen tekst teruggegeven.');
+    const result = await window.desktop.writeText({ prompt: request, mode, modelPreference: modelPreference.value });
+    writingDrafts[mode].output = result.text;
+    writingDrafts[mode].model = 'Gemaakt met ' + result.model + (result.fallback ? ' (terugvalmodel).' : '.');
+    if (writingMode === mode) {
+      $('copy-output').value = result.text;
+      renderWritingModel();
+    }
   } catch (error) { status(desktopError(error)); }
   finally { $('generate-text').disabled = false; }
 };
@@ -511,6 +514,7 @@ $('generate-montage').onclick = async () => {
       prompt: $('video-prompt').value.trim(),
       showLogo: $('video-logo').checked,
       templateId: activeVideoTemplate.id,
+      modelPreference: modelPreference.value,
       animateCards: $('video-cards').checked,
       address: $('video-address').value,
       city: $('video-city').value,
@@ -541,6 +545,14 @@ $('save-montage').onclick = async () => {
 function desktopError(error) {
   return error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
 }
+
+const modelPreference = $('ai-model-preference');
+const savedModelPreference = readLocal('wg-ai-model-preference', 'auto');
+if (['auto', 'astra', 'sol'].includes(savedModelPreference)) modelPreference.value = savedModelPreference;
+modelPreference.onchange = () => {
+  try { localStorage.setItem('wg-ai-model-preference', JSON.stringify(modelPreference.value)); }
+  catch (error) { status(error.message); }
+};
 
 const apiKeyStatus = $('api-key-status');
 const keyForm = $('api-key-form');
@@ -629,7 +641,7 @@ const builtInPrompts = [
 ];
 const documentPrompts = readLocal('wg-document-prompts', []);
 let captionPrompts = readLocal('wg-caption-prompts', []);
-const writingDrafts = { caption: { prompt: '', output: '' }, document: { prompt: '', output: '' } };
+const writingDrafts = { caption: { prompt: '', output: '', model: '' }, document: { prompt: '', output: '', model: '' } };
 let writingMode = 'caption';
 let libraryCategory = 'sale';
 let editingPromptId;
@@ -808,9 +820,15 @@ function editLibraryPrompt(item) {
   if (item) $('prompt-template-name').focus();
 }
 
+function renderWritingModel() {
+  const feedback = $('writing-model-status');
+  feedback.textContent = writingDrafts[writingMode].model;
+  feedback.hidden = !feedback.textContent;
+}
+
 function setWritingMode(mode) {
   if (mode !== writingMode) {
-    writingDrafts[writingMode] = { prompt: $('prompt').value, output: $('copy-output').value };
+    Object.assign(writingDrafts[writingMode], { prompt: $('prompt').value, output: $('copy-output').value });
     writingMode = mode;
     $('prompt').value = writingDrafts[mode].prompt;
     $('copy-output').value = writingDrafts[mode].output;
@@ -821,6 +839,7 @@ function setWritingMode(mode) {
   ['document-settings', 'document-details-label', 'export-document'].forEach(id => { $(id).hidden = !documentMode; });
   $('generate-text').textContent = documentMode ? 'Document genereren' : 'Tekst genereren';
   $('output-heading').textContent = documentMode ? 'Conceptdocument' : 'Concepttekst';
+  renderWritingModel();
   modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.writingMode === mode)));
 }
 

@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron')
 const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
-const { createKeyStore, requestText } = require('./openai.cjs');
+const { createKeyStore, requestWithModel } = require('./openai.cjs');
 const { createRtf } = require('./document.cjs');
 const { addVideoTemplate, getVideoTemplate, listVideoTemplates, videoType } = require('./video-templates.cjs');
 
@@ -86,11 +86,11 @@ ipcMain.handle('api-key-status', () => keyStore().status());
 ipcMain.handle('save-api-key', (_, key) => keyStore().save(key));
 ipcMain.handle('clear-api-key', () => keyStore().clear());
 
-ipcMain.handle('write-text', async (_, { prompt, mode }) => {
+ipcMain.handle('write-text', async (_, { prompt, mode, modelPreference }) => {
   const instruction = mode === 'document'
     ? 'Je schrijft zakelijke Nederlandstalige documenten voor WG Makelaars. Gebruik heldere alinea’s, tussenkoppen met ## en desgewenst opsommingen met -. Laat de titel weg; de app voegt die toe. Gebruik alleen aangeleverde feiten. Noteer ontbrekende essentiële gegevens als [invullen]. Geef alleen het conceptdocument, zonder codeblokken.'
     : 'Je schrijft Nederlandstalige socialmediaberichten voor WG Makelaars. Verzin geen woningdetails. Geef alleen de voorgestelde tekst.';
-  return requestText(await keyStore().requireKey(), { instructions: instruction, input: prompt });
+  return requestWithModel(await keyStore().requireKey(), { instructions: instruction, input: prompt }, { preference: modelPreference });
 });
 
 ipcMain.handle('save-document', async (_, { title, body }) => {
@@ -121,7 +121,7 @@ ipcMain.handle('preview-video-template', async (_, id) => {
   return { bytes: await readFile(template.file), type: template.type };
 });
 
-ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, address, city, contact, animateCards }) => {
+ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, address, city, contact, animateCards, modelPreference }) => {
   const source = selectedVideo;
   if (!source) throw new Error('Laad eerst de video die je wilt bewerken.');
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
@@ -129,7 +129,7 @@ ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, add
   const assets = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui');
   const graphics = animateCards ? { address, city, contact } : undefined;
   const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
-    showLogo ? path.join(assets, 'icon.png') : undefined, graphics);
+    showLogo ? path.join(assets, 'icon.png') : undefined, graphics, modelPreference);
   if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
   return result;
 });

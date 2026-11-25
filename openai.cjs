@@ -86,4 +86,27 @@ async function requestText(token, input, timeout = 60000) {
   throw new Error('OpenAI gaf geen bruikbaar antwoord terug. Probeer het opnieuw.');
 }
 
-module.exports = { createKeyStore, requestText };
+const models = {
+  astra: { id: 'gpt-6.2-astra', label: 'GPT‑6.2 Astra', reasoning: true },
+  sol: { id: 'gpt-6.2-sol', label: 'GPT‑6.2 Sol', reasoning: true },
+  gpt54: { id: 'gpt-5.4', label: 'GPT‑5.4', reasoning: true },
+  mini: { id: 'gpt-4.1-mini', label: 'GPT‑4.1 mini' }
+};
+
+async function requestWithModel(token, input, { preference, video = false } = {}) {
+  const first = preference === 'astra' || preference === 'sol' ? preference : video ? 'astra' : 'sol';
+  const candidates = [first, first === 'astra' ? 'sol' : 'astra', ...(video ? ['gpt54'] : []), 'mini'];
+  for (const [index, name] of candidates.entries()) {
+    const model = models[name];
+    const options = model.reasoning && video ? { reasoning: { effort: 'high' } } : {};
+    try {
+      const text = await requestText(token, { ...input, ...options, model: model.id },
+        video ? (model.reasoning ? 240000 : 120000) : (model.reasoning ? 120000 : 60000));
+      return { text, model: model.label, fallback: index > 0 };
+    } catch (error) {
+      if (error.code !== 'OPENAI_MODEL_UNAVAILABLE' || index === candidates.length - 1) throw error;
+    }
+  }
+}
+
+module.exports = { createKeyStore, requestWithModel };
