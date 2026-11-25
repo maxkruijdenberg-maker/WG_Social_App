@@ -133,3 +133,9 @@ details #play-clip{margin:0}
 .key-settings{max-width:600px}
 .ai-key-link{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ai-key-link button{min-height:32px;padding:5px 8px}
+
+.key-input{position:relative;display:block}
+.key-input.is-saved input{padding-right:42px;border-color:#95c4af;background:#eef8f3;cursor:default}
+.key-input.is-saved input::placeholder{color:#235d46;opacity:1}
+.key-input i{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;color:#196343;background:#d7efe1;pointer-events:none}
+.key-input i svg{width:15px;height:15px}

@@ -6,6 +6,7 @@ const defaults = [
   { id: 'open', topic: 'Open huis', name: 'WG · Open huis', headline: 'Open huis', color: '#195d9f' }
 ];
 const icons = {
+  check: '<path d="m5 12 4 4L19 6"/>',
   layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/>',
   sparkles: '<path d="M12 3c0 6-3 9-9 9 6 0 9 3 9 9 0-6 3-9 9-9-6 0-9-3-9-9ZM19 3v4m-2-2h4"/>',
@@ -526,15 +527,35 @@ function desktopError(error) {
 const apiKeyStatus = $('api-key-status');
 const keyForm = $('api-key-form');
 const keyField = $('api-key');
+const saveKeyButton = $('save-api-key');
+const clearKeyButton = $('clear-api-key');
+let keyState;
+let keyBusy = false;
+
+function updateKeyControls() {
+  const saved = keyState === 'saved';
+  keyField.disabled = saved || keyBusy || !keyState;
+  saveKeyButton.hidden = !keyState || saved;
+  saveKeyButton.disabled = keyField.disabled;
+  clearKeyButton.disabled = keyBusy;
+}
+
 function showKeyStatus(value) {
-  $('clear-api-key').hidden = value !== 'saved' && value !== 'unreadable';
+  keyState = value;
+  const saved = value === 'saved';
+  if (saved) keyField.value = '';
+  keyField.placeholder = saved ? 'API-sleutel opgeslagen' : 'Plak je OpenAI API-sleutel';
+  $('api-key-field').classList.toggle('is-saved', saved);
+  $('api-key-check').hidden = !saved;
+  clearKeyButton.hidden = value !== 'saved' && value !== 'unreadable';
   const messages = {
     missing: 'Er is nog geen API-sleutel opgeslagen.',
-    saved: 'Je sleutel is versleuteld opgeslagen voor dit Windows-gebruikersaccount. Ook na opnieuw opstarten staat hij klaar.',
+    saved: 'Je sleutel is versleuteld opgeslagen. Verwijder de opgeslagen sleutel als je een andere wilt invoeren.',
     environment: 'De app gebruikt een API-sleutel uit de omgevingsinstellingen.'
   };
   apiKeyStatus.textContent = messages[value] || 'Sla je API-sleutel opnieuw op of verwijder de oude sleutel.';
-  document.querySelectorAll('.ai-key-link').forEach(link => { link.hidden = value === 'saved' || value === 'environment'; });
+  document.querySelectorAll('.ai-key-link').forEach(link => { link.hidden = saved || value === 'environment'; });
+  updateKeyControls();
 }
 
 document.querySelectorAll('[data-open-settings]').forEach(button => {
@@ -542,21 +563,30 @@ document.querySelectorAll('[data-open-settings]').forEach(button => {
 });
 keyForm.onsubmit = async event => {
   event.preventDefault();
+  if (keyField.disabled) return;
   if (!window.desktop?.saveApiKey) return status('Open de desktopapp om een sleutel op te slaan.');
-  $('save-api-key').disabled = $('clear-api-key').disabled = true;
-  try {
-    showKeyStatus(await window.desktop.saveApiKey(keyField.value));
-    keyField.value = '';
-  } catch (error) { apiKeyStatus.textContent = desktopError(error); }
-  finally { $('save-api-key').disabled = $('clear-api-key').disabled = false; }
+  const key = keyField.value;
+  keyBusy = true;
+  updateKeyControls();
+  try { showKeyStatus(await window.desktop.saveApiKey(key)); }
+  catch (error) { apiKeyStatus.textContent = desktopError(error); }
+  finally { keyBusy = false; updateKeyControls(); }
 };
-$('clear-api-key').onclick = async () => {
-  $('save-api-key').disabled = $('clear-api-key').disabled = true;
+clearKeyButton.onclick = async () => {
+  if (keyBusy) return;
+  keyBusy = true;
+  let cleared = false;
+  updateKeyControls();
   try {
-    showKeyStatus(await window.desktop.clearApiKey());
     keyField.value = '';
+    showKeyStatus(await window.desktop.clearApiKey());
+    cleared = true;
   } catch (error) { apiKeyStatus.textContent = desktopError(error); }
-  finally { $('save-api-key').disabled = $('clear-api-key').disabled = false; }
+  finally {
+    keyBusy = false;
+    updateKeyControls();
+    if (cleared) keyField.focus();
+  }
 };
 if (window.desktop?.apiKeyStatus) {
   window.desktop.apiKeyStatus().then(showKeyStatus).catch(error => {

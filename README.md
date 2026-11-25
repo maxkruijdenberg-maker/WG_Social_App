@@ -18,7 +18,7 @@ Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_
 
 ## OpenAI instellen
 
-Ga naar **Instellingen**, plak je OpenAI API-sleutel en klik op **Sleutel opslaan**. Windows versleutelt de sleutel voor je gebruikersaccount. ChatGPT, documenten en videomontage gebruiken hem na een herstart automatisch opnieuw. Je kunt de sleutel op dezelfde plek vervangen of verwijderen.
+Ga naar **Instellingen**, plak je OpenAI API-sleutel en klik op **Sleutel opslaan**. Windows versleutelt de sleutel voor je gebruikersaccount. ChatGPT, documenten en videomontage gebruiken hem na een herstart automatisch opnieuw. Een opgeslagen sleutel krijgt een vinkje en het invoerveld wordt vergrendeld. Kies **Sleutel verwijderen** om een nieuwe sleutel in te voeren.
 
 Controleer bij OpenAI dat het API-project toegang heeft tot het model en voldoende API-tegoed heeft. [OpenAI API-sleutels](https://platform.openai.com/api-keys)
 

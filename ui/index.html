@@ -147,9 +147,14 @@
       <h2>OpenAI API-sleutel</h2>
       <p class="hint">Sla je sleutel hier eenmaal op voor ChatGPT, AI-documenten en videomontage.</p>
       <form id="api-key-form">
-        <label>API-sleutel<input id="api-key" type="password" autocomplete="off" spellcheck="false" maxlength="512" placeholder="Plak je OpenAI API-sleutel"></label>
+        <label>API-sleutel
+          <span class="key-input" id="api-key-field">
+            <input id="api-key" type="password" autocomplete="off" spellcheck="false" maxlength="512" aria-describedby="api-key-status" placeholder="Plak je OpenAI API-sleutel" disabled>
+            <i id="api-key-check" data-icon="check" hidden></i>
+          </span>
+        </label>
         <div class="actions">
-          <button class="primary" id="save-api-key" type="submit">Sleutel opslaan</button>
+          <button class="primary" id="save-api-key" type="submit" disabled>Sleutel opslaan</button>
           <button class="secondary" id="clear-api-key" type="button" hidden>Sleutel verwijderen</button>
         </div>
       </form>
