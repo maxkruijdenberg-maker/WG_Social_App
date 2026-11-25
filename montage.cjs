@@ -99,7 +99,7 @@ function segmentArguments(input, output, plan, segment, logo) {
     '-preset', 'fast', '-crf', '19', '-pix_fmt', 'yuv420p', output];
 }
 
-async function createMontage(binary, input, reference, prompt, token, logo, graphics, modelPreference) {
+async function createMontage(binary, input, reference, prompt, token, logo, graphics) {
   const directory = await mkdtemp(path.join(tmpdir(), 'wg-montage-'));
   const sourceName = 'input' + path.extname(input).toLowerCase();
   const referenceName = 'reference' + path.extname(reference).toLowerCase();
@@ -134,7 +134,7 @@ async function createMontage(binary, input, reference, prompt, token, logo, grap
       ] }],
       text: { format: { type: 'json_schema', name: 'montage', strict: true, schema } }
     };
-    const { text, model, fallback } = await requestWithModel(token, request, { preference: modelPreference, video: true });
+    const { text, model, fallback } = await requestWithModel(token, request, { task: 'video' });
     let plan;
     try { plan = JSON.parse(text); }
     catch { throw new Error('OpenAI gaf geen leesbaar montageplan terug. Probeer een kortere instructie.'); }

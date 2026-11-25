@@ -273,7 +273,7 @@ $('generate-text').onclick = async () => {
         'Aangeleverde gegevens en notities: ' + ($('document-details').value.trim() || 'Geen aanvullende gegevens.')].join('\n\n')
       : ['Onderwerp: ' + $('copy-topic').value, 'Opdracht: ' + prompt,
         example && 'Gebruik dit voorbeeld alleen als stijlgids:\n' + example].filter(Boolean).join('\n\n');
-    const result = await window.desktop.writeText({ prompt: request, mode, modelPreference: modelPreference.value });
+    const result = await window.desktop.writeText({ prompt: request, mode });
     writingDrafts[mode].output = result.text;
     writingDrafts[mode].model = 'Gemaakt met ' + result.model + (result.fallback ? ' (terugvalmodel).' : '.');
     if (writingMode === mode) {
@@ -514,7 +514,6 @@ $('generate-montage').onclick = async () => {
       prompt: $('video-prompt').value.trim(),
       showLogo: $('video-logo').checked,
       templateId: activeVideoTemplate.id,
-      modelPreference: modelPreference.value,
       animateCards: $('video-cards').checked,
       address: $('video-address').value,
       city: $('video-city').value,
@@ -545,14 +544,6 @@ $('save-montage').onclick = async () => {
 function desktopError(error) {
   return error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
 }
-
-const modelPreference = $('ai-model-preference');
-const savedModelPreference = readLocal('wg-ai-model-preference', 'auto');
-if (['auto', 'astra', 'sol'].includes(savedModelPreference)) modelPreference.value = savedModelPreference;
-modelPreference.onchange = () => {
-  try { localStorage.setItem('wg-ai-model-preference', JSON.stringify(modelPreference.value)); }
-  catch (error) { status(error.message); }
-};
 
 const apiKeyStatus = $('api-key-status');
 const keyForm = $('api-key-form');

@@ -93,8 +93,9 @@ const models = {
   mini: { id: 'gpt-4.1-mini', label: 'GPT‑4.1 mini' }
 };
 
-async function requestWithModel(token, input, { preference, video = false } = {}) {
-  const first = preference === 'astra' || preference === 'sol' ? preference : video ? 'astra' : 'sol';
+async function requestWithModel(token, input, { task = 'caption' } = {}) {
+  const video = task === 'video';
+  const first = task === 'document' || video ? 'astra' : 'sol';
   const candidates = [first, first === 'astra' ? 'sol' : 'astra', ...(video ? ['gpt54'] : []), 'mini'];
   for (const [index, name] of candidates.entries()) {
     const model = models[name];

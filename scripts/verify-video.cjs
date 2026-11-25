@@ -25,6 +25,14 @@ async function verify() {
     };
     assert.deepEqual(await requestWithModel('test', { input: 'Schrijf een bijschrift.' }),
       { text: 'Testbijschrift', model: 'GPT‑6.2 Sol', fallback: false });
+    global.fetch = async (_url, options) => {
+      const payload = JSON.parse(options.body);
+      assert.equal(payload.model, 'gpt-6.2-astra');
+      assert.equal(payload.input, 'Schrijf een woningbrochure.');
+      return Response.json({ output: [{ content: [{ type: 'output_text', text: 'Testbrochure' }] }] });
+    };
+    assert.deepEqual(await requestWithModel('test', { input: 'Schrijf een woningbrochure.' }, { task: 'document' }),
+      { text: 'Testbrochure', model: 'GPT‑6.2 Astra', fallback: false });
     const attempts = [];
     global.fetch = async (_url, options) => {
       const payload = JSON.parse(options.body);
