@@ -396,7 +396,7 @@ let makingMontage = false;
 let importingTemplate = false;
 const referencePlayer = $('reference-player');
 const montagePlayer = $('montage-player');
-const templateSelect = $('video-template');
+let activeVideoTemplate;
 montagePlayer.onloadedmetadata = () => { montagePlayer.currentTime = Math.min(.08, montagePlayer.duration / 2); };
 
 function showVideo(which) {
@@ -433,21 +433,15 @@ function updateMontageAction() {
   const active = makingMontage || openingSource || exportingVideo || importingTemplate;
   $('open-video').disabled = active;
   $('open-reference').disabled = active;
-  templateSelect.disabled = makingMontage || importingTemplate;
-  $('preview-template').disabled = !templateSelect.value || makingMontage || importingTemplate;
-  $('generate-montage').disabled = active || !videoUrl || !templateSelect.value;
+  $('preview-template').hidden = !activeVideoTemplate;
+  $('preview-template').disabled = active;
+  $('generate-montage').disabled = active || !videoUrl || !activeVideoTemplate;
 }
 
-function refreshVideoTemplates(id = '') {
-  setOptions(templateSelect, [
-    ['', 'Kies een videotemplate'],
-    ...videoTemplates.map(template => [template.id, [template.topic, template.name].filter(Boolean).join(' · ')])
-  ]);
-  templateSelect.value = videoTemplates.some(template => template.id === id) ? id : '';
-  updateMontageAction();
-}
-
-function changeVideoTemplate() {
+function chooseVideoTemplate(template) {
+  if (activeVideoTemplate?.id === template.id) return;
+  activeVideoTemplate = template;
+  $('active-video-template').textContent = [template.topic, template.name].filter(Boolean).join(' · ');
   if (referenceUrl) {
     referencePlayer.pause();
     referencePlayer.removeAttribute('src');
@@ -460,7 +454,6 @@ function changeVideoTemplate() {
   updateMontageAction();
 }
 
-templateSelect.onchange = changeVideoTemplate;
 $('view-source').onclick = () => showVideo('source');
 $('view-montage').onclick = () => showVideo('montage');
 referencePlayer.onerror = () => {
@@ -470,12 +463,12 @@ referencePlayer.onerror = () => {
   }
 };
 $('preview-template').onclick = async () => {
-  const id = templateSelect.value;
+  const id = activeVideoTemplate?.id;
   if (!id) return;
   if (referenceId === id && referenceUrl) return showVideo('reference');
   try {
     const file = await window.desktop.previewVideoTemplate(id);
-    if (templateSelect.value !== id || referenceId === id) return;
+    if (activeVideoTemplate?.id !== id || referenceId === id) return;
     referenceUrl = URL.createObjectURL(new Blob([file.bytes], { type: file.type }));
     referenceId = id;
     referencePlayer.src = referenceUrl;
@@ -493,8 +486,6 @@ $('open-reference').onclick = async () => {
     });
     if (!template) return;
     videoTemplates.push(template);
-    refreshVideoTemplates(template.id);
-    changeVideoTemplate();
     $('video-template-name').value = '';
     $('video-template-topic').value = '';
     status('Videotemplate bewaard.');
@@ -505,7 +496,6 @@ if (window.desktop?.listVideoTemplates) {
   window.desktop.listVideoTemplates().then(items => {
     const known = new Set(videoTemplates.map(item => item.id));
     videoTemplates.push(...items.filter(item => !known.has(item.id)));
-    refreshVideoTemplates(templateSelect.value);
     renderTemplateLibrary();
   }).catch(error => status(error.message));
 }
@@ -521,7 +511,7 @@ $('generate-montage').onclick = async () => {
       key: $('video-key').value.trim() || $('api-key').value,
       prompt: $('video-prompt').value.trim(),
       showLogo: $('video-logo').checked,
-      templateId: templateSelect.value
+      templateId: activeVideoTemplate.id
     });
     resetMontage();
     montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
@@ -702,8 +692,7 @@ function renderTemplateLibrary() {
     for (const item of videoTemplates) {
       rows.push(libraryItem({ icon: 'video', name: item.name, description: item.topic || 'Voorbeeldvideo', use: () => {
         if (makingMontage || importingTemplate) return status('Wacht tot de huidige videobewerking is voltooid.');
-        templateSelect.value = item.id;
-        changeVideoTemplate();
+        chooseVideoTemplate(item);
         showTab('video');
       } }));
     }

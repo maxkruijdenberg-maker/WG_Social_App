@@ -67,7 +67,7 @@ ipcMain.handle('export-video', async (_, { start, end, muted }) => {
   });
   if (canceled) return false;
   if (path.resolve(input).toLowerCase() === path.resolve(filePath).toLowerCase()) {
-    throw new Error('Kies een andere bestandsnaam dan de bronvideo.');
+    throw new Error('Kies een andere bestandsnaam dan die van de ingeladen video.');
   }
   const args = ['-nostdin', '-y', '-ss', String(start), '-i', input, '-t', String(end - start),
     '-map', '0:v:0', '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p'];
@@ -134,7 +134,7 @@ ipcMain.handle('preview-video-template', async (_, id) => {
 ipcMain.handle('generate-montage', async (_, { key, prompt, showLogo, templateId }) => {
   const token = key?.trim() || process.env.OPENAI_API_KEY;
   const source = selectedVideo;
-  if (!source) throw new Error('Laad eerst de bronvideo die je wilt laten bewerken.');
+  if (!source) throw new Error('Laad eerst de video die je wilt bewerken.');
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
   if (!token) throw new Error('Vul je OpenAI API-sleutel in om de montage te maken.');
   const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
@@ -151,7 +151,7 @@ ipcMain.handle('save-montage', async () => {
   });
   if (canceled) return false;
   if ([output.source, output.reference].some(input => path.resolve(input).toLowerCase() === path.resolve(filePath).toLowerCase())) {
-    throw new Error('Kies een andere bestandsnaam dan die van de bron- of voorbeeldvideo.');
+    throw new Error('Kies een andere bestandsnaam dan die van de ingeladen video of het template.');
   }
   await writeFile(filePath, output.bytes);
   return true;

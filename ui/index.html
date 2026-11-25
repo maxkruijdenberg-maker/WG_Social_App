@@ -68,7 +68,7 @@
         <label>Naam (optioneel)<input id="video-template-name" maxlength="100" placeholder="Bijvoorbeeld Woningtour"></label>
         <label>Onderwerp (optioneel)<input id="video-template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld Nieuw in verkoop"></label>
         <button class="primary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen en bewaren</button>
-        <p class="hint">De app bewaart een lokale kopie voor volgende montages.</p>
+        <p class="hint">Bewaar hier je voorbeeldvideo. Klik daarna bij het template op Gebruiken om het in de video-editor te openen.</p>
       </article>
       <article class="card" id="document-library-form" hidden><h3 id="document-form-heading">Documentprompt toevoegen</h3>
         <label>Naam<input id="document-template-name" maxlength="100" placeholder="Bijvoorbeeld Waardebepalingsbrief"></label>
@@ -105,7 +105,7 @@
     </div>
   </section>
   <section id="video" class="screen pane" hidden>
-    <div class="section-title"><h2>Video monteren met AI</h2><p>Laad de video die je wilt bewerken en kies een videotemplate voor de gewenste stijl.</p></div>
+    <div class="section-title"><h2>Video monteren met AI</h2><p>Laad hier de video die je wilt bewerken. Je kiest de voorbeeldvideo in de templatebibliotheek.</p></div>
     <div class="content-grid video-grid">
       <article class="card video-workspace">
         <div class="video-preview">
@@ -114,7 +114,7 @@
           <video id="montage-player" controls hidden></video>
           <div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div>
         </div>
-        <div class="actions"><button class="secondary" id="view-source" hidden>Bron</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
+        <div class="actions"><button class="secondary" id="view-source" hidden>Ingeladen video</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
         <p id="montage-summary" class="hint" hidden></p>
         <button class="secondary" id="save-montage" hidden><i data-icon="download"></i> AI-montage opslaan</button>
         <details>
@@ -125,15 +125,13 @@
         </details>
       </article>
       <article class="card video-settings">
-        <h3>Bronvideo</h3>
-        <p class="hint">Deze video wordt bewerkt.</p>
-        <button class="secondary" id="open-video"><i data-icon="video"></i> Bronvideo inladen</button>
-        <p class="hint" id="source-name">Nog geen bronvideo ingeladen.</p>
+        <h3>Te bewerken video</h3>
+        <button class="secondary" id="open-video"><i data-icon="video"></i> Video inladen</button>
+        <p class="hint" id="source-name">Nog geen video ingeladen.</p>
         <hr>
-        <h3>Videotemplate</h3>
-        <label>Opgeslagen voorbeeldvideo<select id="video-template"><option value="">Kies een videotemplate</option></select></label>
-        <button class="secondary" id="preview-template" aria-pressed="false" disabled>Voorbeeld bekijken</button>
-        <button class="secondary" id="show-video-library">Videotemplates beheren</button>
+        <h3>Actief videotemplate</h3>
+        <p class="hint" id="active-video-template">Nog geen template gekozen.</p>
+        <div class="actions"><button class="secondary" id="show-video-library">Kies in templatebibliotheek</button><button class="secondary" id="preview-template" aria-pressed="false" hidden>Voorbeeld bekijken</button></div>
         <hr>
         <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
         <label>OpenAI API-sleutel<input type="password" id="video-key" autocomplete="off" placeholder="Gebruikt ook de sleutel op het ChatGPT-tabblad"></label>
