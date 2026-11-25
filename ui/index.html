@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; media-src 'self' blob:; style-src 'self'; object-src 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WG Social Studio</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="app.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand"><img src="logo.svg" alt="WG Makelaars"><div><strong>WG Social Studio</strong><small>WG MAKELAARS</small></div></div>
+  <nav aria-label="Werkruimte">
+    <button data-tab="design"><i data-icon="layout"></i> Post ontwerpen</button>
+    <button data-tab="templates"><i data-icon="layers"></i> Templates</button>
+    <button data-tab="text"><i data-icon="sparkles"></i> ChatGPT</button>
+    <button data-tab="video"><i data-icon="video"></i> Video-editor</button>
+  </nav>
+  <div class="side-bottom"><span>WG</span><div><strong>WG Makelaars</strong><small>Lokale werkruimte</small></div></div>
+</aside>
+<main>
+  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><button class="primary" id="export-image"><i data-icon="download"></i> Download PNG</button></header>
+  <section id="design" class="screen design">
+    <div class="workspace">
+      <div class="workspace-bar"><strong>Voorvertoning</strong><label><span class="sr-only">Formaat</span><select id="format"><option value="1080x1080">Instagram · 1:1</option><option value="1080x1350">Instagram · 4:5</option><option value="1080x1920">Story · 9:16</option><option value="1200x628">Facebook · 1.91:1</option></select></label></div>
+      <div class="artboard"><canvas id="post" width="1080" height="1080" aria-label="Voorvertoning van de socialmediapost"></canvas></div>
+      <div class="workspace-footer"><span id="dimensions">1080 × 1080 px</span><span>PNG-export</span></div>
+    </div>
+    <aside class="inspector">
+      <h2>Post aanpassen</h2>
+      <label>Onderwerp<select id="topic"></select></label>
+      <label>Template<select id="template"></select></label>
+      <label class="upload"><i data-icon="image"></i><strong>Upload woningfoto</strong><small id="photo-name">JPG, PNG of WebP</small><input type="file" id="photo" accept="image/jpeg,image/png,image/webp"></label>
+      <label>Uitsnede <select id="position"><option value=".5">Midden</option><option value="0">Boven / links</option><option value="1">Onder / rechts</option></select></label>
+      <label>Helderheid <input type="range" id="brightness" min="65" max="145" value="100"></label>
+      <hr>
+      <label>Koptekst<input id="headline" value="Nu te koop" maxlength="40"></label>
+      <label>Adres of ondertitel<input id="subtitle" value="Parklaan 24 · Voorbeeldwoning" maxlength="70"></label>
+      <label class="check"><input type="checkbox" id="show-logo" checked> WG-logo tonen</label>
+    </aside>
+  </section>
+  <section id="templates" class="screen pane" hidden>
+    <div class="section-title"><h2>Templates per onderwerp</h2><p>Bewaar een geëxporteerd Canva-ontwerp of een eigen voorbeeld bij het juiste onderwerp.</p></div>
+    <div class="content-grid">
+      <article class="card"><h3>Voorbeeld toevoegen</h3>
+        <label>Onderwerp<input id="template-topic" list="topics" placeholder="Bijvoorbeeld Nieuw in verkoop"><datalist id="topics"></datalist></label>
+        <label>Naam van template<input id="template-name" placeholder="Bijvoorbeeld Canva · Instagram"></label>
+        <label>Afbeelding<input type="file" id="template-file" accept="image/png,image/jpeg,image/webp"></label>
+        <label>Toepassen als<select id="template-mode"><option value="overlay">Canva-overlay met transparante fotozone</option><option value="reference">Voorbeeld voor kleuren en beeldverhouding</option></select></label>
+        <p class="hint">Exporteer voor een overlay een PNG met een transparante uitsparing. In de editor wordt je foto achter de uitsparing geplaatst.</p>
+        <button id="add-template" class="primary">Template opslaan</button>
+      </article>
+      <article class="card"><h3>Bibliotheek</h3><div id="library"></div></article>
+    </div>
+  </section>
+  <section id="text" class="screen pane" hidden>
+    <div class="section-title"><h2>Schrijf met ChatGPT</h2><p>Maak een bijschrift, advertentietekst of korte versie voor social media.</p></div>
+    <div class="content-grid">
+      <article class="card"><h3>Opdracht</h3>
+        <label>OpenAI API-sleutel <input type="password" id="api-key" autocomplete="off" placeholder="Alleen nodig als er geen sleutel is ingesteld"></label>
+        <label>Voorbeeldtekst voor dit onderwerp<textarea id="example-copy" rows="4" placeholder="Plak hier een voorbeeld van de gewenste toon."></textarea></label>
+        <div class="row"><label>Onderwerp<select id="copy-topic"></select></label><button class="secondary" id="save-example">Voorbeeld bewaren</button></div>
+        <label>Instructie<textarea id="prompt" rows="4" placeholder="Schrijf een Instagram-bijschrift over deze woning. Gebruik de volgende woningdetails…"></textarea></label>
+        <button id="generate-text" class="primary">Tekst genereren</button>
+      </article>
+      <article class="card"><h3>Concepttekst</h3><label class="sr-only" for="copy-output">Concepttekst</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je tekst. Je kunt deze direct aanpassen."></textarea><button class="secondary" id="copy-text">Tekst kopiëren</button></article>
+    </div>
+  </section>
+  <section id="video" class="screen pane" hidden>
+    <div class="section-title"><h2>Video bewerken</h2><p>Bekijk je bronvideo, knip het gewenste fragment en exporteer het als MP4.</p></div>
+    <div class="content-grid video-grid">
+      <div class="card"><div class="video-preview"><video id="player" controls hidden></video><div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div></div><button class="secondary" id="open-video">Video openen</button></div>
+      <article class="card"><h3>Fragment</h3><label>Begin (seconden)<input type="number" id="video-start" min="0" step=".01" value="0"></label><label>Einde (seconden)<input type="number" id="video-end" min="0" step=".01" value="0"></label><button class="secondary" id="play-clip" disabled>Fragment afspelen</button><label class="check"><input type="checkbox" id="mute-video"> Geluid verwijderen</label><button class="primary" id="export-video" disabled>Exporteren als MP4</button></article>
+    </div>
+  </section>
+  <div id="status" role="status" hidden></div>
+</main>
+</body>
+</html>

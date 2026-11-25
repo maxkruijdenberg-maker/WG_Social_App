@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 407 491">
+  <rect x="46" y="47" width="315" height="430" rx="13" fill="#195c99"/>
+  <path d="M193 12 Q204 1 215 12 L394 193 Q405 204 394 215 L215 397 Q204 408 193 397 L13 215 Q2 204 13 193Z" fill="#1b385f" stroke="#fff" stroke-width="12"/>
+  <path d="M87 135h35l8 96 10-96h32l11 96 12-96h35l-19 139h-44l-9-73-10 73h-44zM320 186h-36v-22q0-8-6-8t-6 8v81q0 8 6 8t6-8v-25h-7v-21h43v75h-23l-4-10q-8 13-23 13-34 0-34-40v-64q0-41 42-41t42 41z" fill="#fff"/>
+  <text x="203.5" y="459" fill="#fff" text-anchor="middle" font-size="55" font-family="Georgia,serif" font-weight="bold" letter-spacing="2">makelaars</text>
+</svg>

@@ -1,0 +1,42 @@
+{
+  "name": "wg-social-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Social media studio voor WG Makelaars",
+  "author": "WG Makelaars",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "node scripts/build-win.cjs"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0"
+  },
+  "devDependencies": {
+    "electron": "42.3.0",
+    "electron-builder": "26.8.1"
+  },
+  "build": {
+    "appId": "nl.wgmakelaars.socialstudio",
+    "productName": "WG Social Studio",
+    "asarUnpack": [
+      "**/node_modules/@ffmpeg-installer/**"
+    ],
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "ui/**/*",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "artifactName": "WG-Social-Studio-Windows.${ext}",
+      "extraResources": [
+        {
+          "from": ".build/win",
+          "to": "ffmpeg"
+        }
+      ]
+    }
+  }
+}
