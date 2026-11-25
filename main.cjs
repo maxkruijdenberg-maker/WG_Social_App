@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron');
 const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
@@ -25,8 +25,9 @@ function pickVideo() {
 
 function createWindow() {
   const window = new BrowserWindow({
+    ...screen.getPrimaryDisplay().bounds,
     fullscreen: true,
-    minWidth: 880, minHeight: 640,
+    frame: false,
     backgroundColor: '#f2f5fa', autoHideMenuBar: true,
     icon: path.join(__dirname, 'ui', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true }
