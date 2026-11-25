@@ -23,7 +23,7 @@ try {
   if (packed.integrity !== locked.integrity) throw new Error('De checksum van FFmpeg komt niet overeen met de lockfile.');
   run('tar', ['-xf', path.join(temporary, packed.filename), '-C', vendor,
     '--strip-components=1', 'package/ffmpeg.exe', 'package/package.json']);
-  run(process.execPath, [require.resolve('electron-builder/out/cli/cli'), '--win', 'zip', '--x64'], { cwd: root });
+  run(process.execPath, [require.resolve('electron-builder/out/cli/cli'), '--win', 'zip', 'nsis', '--x64'], { cwd: root });
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

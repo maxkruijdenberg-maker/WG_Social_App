@@ -4,7 +4,9 @@ Windows-desktopapp van WG Makelaars voor vastgoedposts, video en publicatie op s
 
 ## Openen op Windows
 
-Download de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip), pak hem volledig uit en open **WG Social Studio.exe**. Houd de uitgepakte bestanden bij elkaar. Deze versie is voor Windows x64.
+Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** op je bureaublad en in het Startmenu.
+
+Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip) volledig uitpakken en **WG Social Studio.exe** openen. Houd dan de uitgepakte bestanden bij elkaar.
 
 ## Werkruimte
 
@@ -22,4 +24,4 @@ Download de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App
 
 ## Ontwikkelen
 
-Gebruik Node.js 24. Installeer met `npm ci` en start met `npm start`. Met `npm run build:win` maak je de Windows-zip in `dist`.
+Gebruik Node.js 24. Installeer met `npm ci` en start met `npm start`. Met `npm run build:win` maak je het installatiebestand en de Windows-zip in `dist`.
