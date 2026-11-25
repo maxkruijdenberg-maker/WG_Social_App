@@ -408,6 +408,7 @@ let reference;
 let montageUrl;
 let makingMontage = false;
 const montagePlayer = $('montage-player');
+montagePlayer.onloadedmetadata = () => { montagePlayer.currentTime = Math.min(.08, montagePlayer.duration / 2); };
 function showVideo(which) {
   const showMontage = which === 'montage' && Boolean(montageUrl);
   (showMontage ? player : montagePlayer).pause();
