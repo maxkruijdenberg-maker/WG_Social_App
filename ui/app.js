@@ -384,6 +384,7 @@ let referenceId;
 let montageUrl;
 let visibleVideo = 'source';
 let makingMontage = false;
+let savingMontage = false;
 let importingTemplate = false;
 const referencePlayer = $('reference-player');
 const montagePlayer = $('montage-player');
@@ -415,18 +416,20 @@ function resetMontage() {
     URL.revokeObjectURL(montageUrl);
   }
   montageUrl = undefined;
-  ['view-montage', 'save-montage', 'montage-summary', 'montage-status'].forEach(id => { $(id).hidden = true; });
+  $('view-montage').hidden = $('montage-summary').hidden = true;
+  $('montage-status').textContent = 'De download wordt beschikbaar zodra je montage klaar is.';
   $('view-source').hidden = !videoUrl;
   showVideo('source');
 }
 
 function updateMontageAction() {
-  const active = makingMontage || openingSource || exportingVideo || importingTemplate;
+  const active = makingMontage || savingMontage || openingSource || exportingVideo || importingTemplate;
   $('open-video').disabled = active;
   $('open-reference').disabled = active;
   $('preview-template').hidden = !activeVideoTemplate;
   $('preview-template').disabled = active;
   $('generate-montage').disabled = active || !videoUrl || !activeVideoTemplate;
+  $('save-montage').disabled = active || !montageUrl;
 }
 
 function chooseVideoTemplate(template) {
@@ -495,7 +498,6 @@ $('generate-montage').onclick = async () => {
   makingMontage = true;
   updateMontageAction();
   const feedback = $('montage-status');
-  feedback.hidden = false;
   feedback.textContent = 'Beelden analyseren en de montage maken…';
   try {
     const result = await window.desktop.generateMontage({
@@ -507,7 +509,8 @@ $('generate-montage').onclick = async () => {
     montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
     montagePlayer.src = montageUrl;
     $('montage-summary').textContent = result.summary;
-    ['view-source', 'view-montage', 'save-montage', 'montage-summary'].forEach(id => { $(id).hidden = false; });
+    ['view-source', 'view-montage', 'montage-summary'].forEach(id => { $(id).hidden = false; });
+    feedback.textContent = 'Montage klaar. Klik op Download MP4 om je video op te slaan.';
     showVideo('montage');
   } catch (error) { feedback.textContent = desktopError(error); }
   finally {
@@ -516,9 +519,12 @@ $('generate-montage').onclick = async () => {
   }
 };
 $('save-montage').onclick = async () => {
+  savingMontage = true;
+  updateMontageAction();
   try {
-    if (await window.desktop.saveMontage()) status('AI-montage opgeslagen.');
-  } catch (error) { status(error.message); }
+    if (await window.desktop.saveMontage()) $('montage-status').textContent = 'MP4 opgeslagen.';
+  } catch (error) { $('montage-status').textContent = desktopError(error); }
+  finally { savingMontage = false; updateMontageAction(); }
 };
 
 function desktopError(error) {
@@ -706,7 +712,7 @@ function renderTemplateLibrary() {
   if (libraryCategory === 'video') {
     for (const item of videoTemplates) {
       rows.push(libraryItem({ icon: 'video', name: item.name, description: item.topic || 'Voorbeeldvideo', use: () => {
-        if (makingMontage || importingTemplate) return status('Wacht tot de huidige videobewerking is voltooid.');
+        if (makingMontage || savingMontage || importingTemplate) return status('Wacht tot de huidige videobewerking is voltooid.');
         chooseVideoTemplate(item);
         showTab('video');
       } }));

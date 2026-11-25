@@ -120,7 +120,6 @@
         </div>
         <div class="actions"><button class="secondary" id="view-source" hidden>Ingeladen video</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
         <p id="montage-summary" class="hint" hidden></p>
-        <button class="secondary" id="save-montage" hidden><i data-icon="download"></i> AI-montage opslaan</button>
         <details>
           <summary>Handmatig een fragment knippen</summary>
           <div class="row"><label>Begin (seconden)<input type="number" id="video-start" min="0" step=".01" value="0"></label><label>Einde (seconden)<input type="number" id="video-end" min="0" step=".01" value="0"></label></div>
@@ -141,8 +140,11 @@
         <p class="hint ai-key-link" hidden>OpenAI-sleutel nodig. <button class="secondary" type="button" data-open-settings>API-sleutel instellen</button></p>
         <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
         <p class="hint">Voor de analyse gaan tijdcodes en geselecteerde stilstaande beelden uit beide video's naar OpenAI.</p>
-        <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
-        <p class="hint" id="montage-status" role="status" hidden></p>
+        <div class="actions">
+          <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
+          <button class="secondary" id="save-montage" aria-describedby="montage-status" disabled><i data-icon="download"></i> Download MP4</button>
+        </div>
+        <p class="hint" id="montage-status" role="status">De download wordt beschikbaar zodra je montage klaar is.</p>
       </article>
     </div>
   </section>
