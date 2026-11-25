@@ -42,7 +42,7 @@
     </aside>
   </section>
   <section id="templates" class="screen pane" hidden>
-    <p class="library-intro">Vind je postontwerpen, voorbeeldvideo’s en documentprompts op één plek.</p>
+    <p class="library-intro">Vind je postontwerpen, voorbeeldvideo’s en prompts op één plek.</p>
     <div class="category-bar" role="group" aria-label="Templatecategorie">
       <button class="secondary" data-category="sale">Verkoop</button>
       <button class="secondary" data-category="sold">Verkocht</button>
@@ -55,6 +55,13 @@
       <article class="card">
         <h3 id="library-heading">Verkoop</h3>
         <div id="library"></div>
+      </article>
+      <div class="library-tools">
+      <article class="card" id="prompt-library-form" hidden><h3 id="prompt-form-heading">Prompt toevoegen</h3>
+        <label id="caption-prompt-category-label">Categorie<select id="caption-prompt-category"></select></label>
+        <label>Naam<input id="prompt-template-name" maxlength="100" placeholder="Bijvoorbeeld Bijschrift voor een nieuwe woning"></label>
+        <label>Prompt<textarea id="prompt-template-text" rows="5" maxlength="8000" placeholder="Beschrijf wat ChatGPT moet schrijven."></textarea></label>
+        <div class="actions"><button class="primary" id="save-prompt-template">Prompt opslaan</button><button class="secondary" id="cancel-prompt-template" hidden>Annuleren</button></div>
       </article>
       <article class="card" id="image-template-form"><h3>Posttemplate toevoegen</h3>
         <label>Onderwerp<input id="template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld een woning uitgelicht"><datalist id="topics"></datalist></label>
@@ -70,11 +77,7 @@
         <button class="primary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen en bewaren</button>
         <p class="hint">Bewaar hier je voorbeeldvideo. Klik daarna bij het template op Gebruiken om het in de video-editor te openen.</p>
       </article>
-      <article class="card" id="document-library-form" hidden><h3 id="document-form-heading">Documentprompt toevoegen</h3>
-        <label>Naam<input id="document-template-name" maxlength="100" placeholder="Bijvoorbeeld Waardebepalingsbrief"></label>
-        <label>Prompt<textarea id="document-template-prompt" rows="8" maxlength="8000" placeholder="Beschrijf het gewenste document, de onderdelen en de toon."></textarea></label>
-        <div class="actions"><button class="primary" id="save-document-template">Prompt opslaan</button><button class="secondary" id="cancel-document-template" hidden>Annuleren</button></div>
-      </article>
+      </div>
     </div>
   </section>
   <section id="text" class="screen pane" hidden>
@@ -89,6 +92,7 @@
         <div id="caption-settings">
           <label>Voorbeeldtekst voor dit onderwerp<textarea id="example-copy" rows="3" placeholder="Plak hier een voorbeeld van de gewenste toon."></textarea></label>
           <div class="row"><label>Onderwerp<select id="copy-topic"></select></label><button class="secondary" id="save-example">Voorbeeld bewaren</button></div>
+          <label id="caption-prompt-label" hidden>Opgeslagen prompt<select id="caption-prompt-select"></select></label>
         </div>
         <div id="document-settings" hidden>
           <label>Documentprompt<select id="document-prompt-select"></select></label>
@@ -97,7 +101,7 @@
         </div>
         <label>Instructie<textarea id="prompt" rows="5" placeholder="Beschrijf wat ChatGPT moet schrijven."></textarea></label>
         <label id="document-details-label" hidden>Gegevens en notities<textarea id="document-details" rows="4" maxlength="16000" placeholder="Plak hier de woninggegevens, namen en andere informatie voor dit document."></textarea></label>
-        <button id="generate-text" class="primary">Tekst genereren</button>
+        <div class="actions"><button id="generate-text" class="primary">Tekst genereren</button><button id="save-caption-draft" class="secondary">Instructie opslaan als prompt</button></div>
       </article>
       <article class="card"><h3 id="output-heading">Concepttekst</h3><label class="sr-only" for="copy-output">Concept</label><textarea id="copy-output" rows="16" placeholder="Hier verschijnt je concept. Je kunt het direct aanpassen."></textarea>
         <div class="actions"><button class="secondary" id="copy-text">Tekst kopiëren</button><button class="primary" id="export-document" hidden>Opslaan voor Word (.rtf)</button></div>

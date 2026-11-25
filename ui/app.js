@@ -185,9 +185,10 @@ function refreshLibrary(topic = activeTemplate.topic, id = activeTemplate.id) {
   setOptions($('topic'), topics.map(name => [name, name]));
   $('topic').value = topic;
   const copyTopic = $('copy-topic').value;
-  setOptions($('copy-topic'), topics.map(name => [name, name]));
-  $('copy-topic').value = topics.includes(copyTopic) ? copyTopic : topic;
-  $('example-copy').value = examples[$('copy-topic').value] || '';
+  const copyTopics = [...new Set([...topics, 'Overig'])];
+  setOptions($('copy-topic'), copyTopics.map(name => [name, name]));
+  $('copy-topic').value = copyTopics.includes(copyTopic) ? copyTopic : topic;
+  refreshCopyTopic();
   $('topics').replaceChildren(...topics.map(name => new Option(name)));
   renderTemplateLibrary();
   refreshTemplateOptions(topic, id);
@@ -252,7 +253,7 @@ $('add-template').onclick = async () => {
   } catch (error) { status(error.message); }
 };
 
-$('copy-topic').onchange = () => { $('example-copy').value = examples[$('copy-topic').value] || ''; };
+$('copy-topic').onchange = refreshCopyTopic;
 $('save-example').onclick = () => {
   examples[$('copy-topic').value] = $('example-copy').value;
   localStorage.setItem('wg-copy-examples', JSON.stringify(examples));
@@ -610,6 +611,7 @@ const builtInPrompts = [
     prompt: 'Maak een praktisch draaiboek voor een open huis voor WG Makelaars. Werk voorbereiding, materialen, ontvangst, rondleiding, contactregistratie en opvolging uit. Gebruik de aangeleverde datum, locatie en taakverdeling. Markeer ontbrekende gegevens als invulpunten.' }
 ];
 const documentPrompts = readLocal('wg-document-prompts', []);
+let captionPrompts = readLocal('wg-caption-prompts', []);
 const writingDrafts = { caption: { prompt: '', output: '' }, document: { prompt: '', output: '' } };
 let writingMode = 'caption';
 let libraryCategory = 'sale';
@@ -627,7 +629,10 @@ function categoryFor(template) {
 }
 
 function selectLibraryCategory(category) {
-  libraryCategory = category;
+  if (libraryCategory !== category) {
+    libraryCategory = category;
+    editLibraryPrompt();
+  }
   renderTemplateLibrary();
 }
 
@@ -694,7 +699,9 @@ function renderTemplateLibrary() {
   $('library-heading').textContent = categoryNames[libraryCategory];
   $('image-template-form').hidden = !Object.hasOwn(categoryTopics, libraryCategory);
   $('video-library-form').hidden = libraryCategory !== 'video';
-  $('document-library-form').hidden = libraryCategory !== 'documents';
+  const isDocument = libraryCategory === 'documents';
+  $('prompt-library-form').hidden = libraryCategory === 'video';
+  $('caption-prompt-category-label').hidden = isDocument;
   const rows = [];
   if (libraryCategory === 'video') {
     for (const item of videoTemplates) {
@@ -707,9 +714,13 @@ function renderTemplateLibrary() {
   } else if (libraryCategory === 'documents') {
     for (const item of [...builtInPrompts, ...documentPrompts]) {
       rows.push(libraryItem({ icon: 'sparkles', name: item.name, description: item.description || 'Eigen documentprompt',
-        use: () => useDocumentPrompt(item), edit: item.description ? null : () => editDocumentPrompt(item) }));
+        use: () => useDocumentPrompt(item), edit: item.description ? null : () => editLibraryPrompt(item) }));
     }
   } else {
+    for (const item of captionPrompts.filter(item => item.category === libraryCategory)) {
+      rows.push(libraryItem({ icon: 'sparkles', name: item.name, description: 'Prompt voor bijschrift',
+        use: () => useCaptionPrompt(item), edit: () => editLibraryPrompt(item) }));
+    }
     for (const item of templates.filter(item => categoryFor(item) === libraryCategory)) {
       rows.push(libraryItem({ icon: 'image', name: item.name, description: item.topic,
         use: () => openImageTemplate(item), move: item.file ? async destination => {
@@ -729,7 +740,7 @@ function renderTemplateLibrary() {
   if (rows.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'hint';
-    empty.textContent = libraryCategory === 'video' ? 'Voeg een voorbeeldvideo toe om dit als videotemplate te gebruiken.' : 'In deze categorie staan nog geen posttemplates.';
+    empty.textContent = libraryCategory === 'video' ? 'Voeg een voorbeeldvideo toe om dit als videotemplate te gebruiken.' : 'In deze categorie staan nog geen prompts of posttemplates.';
     rows.push(empty);
   }
   $('library').replaceChildren(...rows);
@@ -742,13 +753,42 @@ function refreshDocumentPrompts() {
   $('document-prompt-select').value = items.some(item => item.id === current) ? current : '';
 }
 
-function editDocumentPrompt(item) {
+function refreshCopyTopic() {
+  const topic = $('copy-topic').value;
+  $('example-copy').value = examples[topic] || '';
+  const items = captionPrompts.filter(item => item.category === categoryFor({ topic }));
+  const select = $('caption-prompt-select');
+  const current = select.value;
+  setOptions(select, [['', 'Kies een prompt'], ...items.map(item => [item.id, item.name])]);
+  select.value = items.some(item => item.id === current) ? current : '';
+  $('caption-prompt-label').hidden = items.length === 0;
+}
+
+function useCaptionPrompt(item) {
+  setWritingMode('caption');
+  const topic = categoryTopics[item.category] || 'Overig';
+  const select = $('copy-topic');
+  if (![...select.options].some(option => option.value === topic)) select.add(new Option(topic, topic));
+  select.value = topic;
+  refreshCopyTopic();
+  $('caption-prompt-select').value = item.id;
+  $('prompt').value = item.prompt;
+  showTab('text');
+  $('prompt').focus();
+}
+
+function editLibraryPrompt(item) {
   editingPromptId = item?.id;
-  $('document-template-name').value = item?.name || '';
-  $('document-template-prompt').value = item?.prompt || '';
-  $('document-form-heading').textContent = item ? 'Documentprompt wijzigen' : 'Documentprompt toevoegen';
-  $('cancel-document-template').hidden = !item;
-  if (item) $('document-template-name').focus();
+  const documentMode = libraryCategory === 'documents';
+  const label = documentMode ? 'Documentprompt' : 'Bijschriftprompt';
+  $('prompt-template-name').value = item?.name || '';
+  $('prompt-template-name').placeholder = documentMode ? 'Bijvoorbeeld Waardebepalingsbrief' : 'Bijvoorbeeld Bijschrift voor een nieuwe woning';
+  $('prompt-template-text').value = item?.prompt || '';
+  $('prompt-template-text').placeholder = documentMode ? 'Beschrijf het gewenste document, de onderdelen en de toon.' : 'Beschrijf wat ChatGPT moet schrijven.';
+  $('caption-prompt-category').value = item?.category || libraryCategory;
+  $('prompt-form-heading').textContent = label + (item ? ' wijzigen' : ' toevoegen');
+  $('cancel-prompt-template').hidden = !item;
+  if (item) $('prompt-template-name').focus();
 }
 
 function setWritingMode(mode) {
@@ -760,6 +800,7 @@ function setWritingMode(mode) {
   }
   const documentMode = mode === 'document';
   $('caption-settings').hidden = documentMode;
+  $('save-caption-draft').hidden = documentMode;
   ['document-settings', 'document-details-label', 'export-document'].forEach(id => { $(id).hidden = !documentMode; });
   $('generate-text').textContent = documentMode ? 'Document genereren' : 'Tekst genereren';
   $('output-heading').textContent = documentMode ? 'Conceptdocument' : 'Concepttekst';
@@ -783,20 +824,42 @@ $('document-prompt-select').onchange = () => {
   const item = [...builtInPrompts, ...documentPrompts].find(item => item.id === $('document-prompt-select').value);
   if (item) useDocumentPrompt(item);
 };
-$('cancel-document-template').onclick = () => editDocumentPrompt();
-$('save-document-template').onclick = () => {
-  const name = $('document-template-name').value.trim();
-  const prompt = $('document-template-prompt').value.trim();
+$('caption-prompt-select').onchange = () => {
+  const item = captionPrompts.find(item => item.id === $('caption-prompt-select').value);
+  if (item) useCaptionPrompt(item);
+};
+$('save-caption-draft').onclick = () => {
+  const prompt = $('prompt').value.trim();
+  if (!prompt) return status('Schrijf eerst een instructie om als prompt te bewaren.');
+  openLibrary(categoryFor({ topic: $('copy-topic').value }));
+  editLibraryPrompt();
+  $('prompt-template-text').value = prompt;
+  $('prompt-template-name').focus();
+};
+$('cancel-prompt-template').onclick = () => editLibraryPrompt();
+$('save-prompt-template').onclick = () => {
+  const name = $('prompt-template-name').value.trim();
+  const prompt = $('prompt-template-text').value.trim();
   if (!name || !prompt) return status('Vul een naam en prompt in.');
+  const isDocument = libraryCategory === 'documents';
+  const category = $('caption-prompt-category').value;
+  const prompts = isDocument ? documentPrompts : captionPrompts;
   const item = { id: editingPromptId || crypto.randomUUID(), name, prompt };
-  const next = editingPromptId ? documentPrompts.map(saved => saved.id === editingPromptId ? item : saved) : [...documentPrompts, item];
+  if (!isDocument) item.category = category;
+  const next = editingPromptId ? prompts.map(saved => saved.id === editingPromptId ? item : saved) : [...prompts, item];
   try {
-    localStorage.setItem('wg-document-prompts', JSON.stringify(next));
-    documentPrompts.splice(0, documentPrompts.length, ...next);
-    editDocumentPrompt();
-    refreshDocumentPrompts();
+    localStorage.setItem(isDocument ? 'wg-document-prompts' : 'wg-caption-prompts', JSON.stringify(next));
+    if (isDocument) {
+      documentPrompts.splice(0, documentPrompts.length, ...next);
+      refreshDocumentPrompts();
+    } else {
+      captionPrompts = next;
+      libraryCategory = category;
+      refreshCopyTopic();
+    }
+    editLibraryPrompt();
     renderTemplateLibrary();
-    status('Documentprompt opgeslagen.');
+    status(isDocument ? 'Documentprompt opgeslagen.' : 'Prompt opgeslagen bij ' + categoryNames[category] + '.');
   } catch (error) { status(error.message); }
 };
 $('export-document').onclick = async () => {
@@ -808,6 +871,8 @@ $('export-document').onclick = async () => {
   } catch (error) { status(error.message); }
 };
 
+setOptions($('caption-prompt-category'), Object.keys(categoryTopics).map(category => [category, categoryNames[category]]));
+editLibraryPrompt();
 refreshDocumentPrompts();
 setWritingMode('caption');
 showTab('design');

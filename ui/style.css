@@ -139,3 +139,5 @@ details #play-clip{margin:0}
 .key-input.is-saved input::placeholder{color:#235d46;opacity:1}
 .key-input i{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;color:#196343;background:#d7efe1;pointer-events:none}
 .key-input i svg{width:15px;height:15px}
+
+.library-tools{display:grid;gap:16px;min-width:0}
