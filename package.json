@@ -1,6 +1,6 @@
 {
   "name": "wg-social-studio",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Social media studio voor WG Makelaars",
   "author": "WG Makelaars",
@@ -43,12 +43,6 @@
           "to": "ui/icon.png"
         }
       ]
-    },
-    "nsis": {
-      "artifactName": "WG-Social-Studio-Setup.exe",
-      "shortcutName": "WG Social Studio",
-      "createDesktopShortcut": "always",
-      "createStartMenuShortcut": true
     }
   }
 }

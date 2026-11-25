@@ -24,4 +24,4 @@ Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_
 
 ## Ontwikkelen
 
-Gebruik Node.js 24. Installeer met `npm ci` en start met `npm start`. Met `npm run build:win` maak je het installatiebestand en de Windows-zip in `dist`.
+Gebruik Node.js 24. Installeer met `npm ci` en start met `npm start`. Met `npm run build:win` maak je de Windows-zip in `dist`. GitHub Actions bouwt het installatiebestand met Inno Setup vanuit `scripts/windows-setup.iss`.

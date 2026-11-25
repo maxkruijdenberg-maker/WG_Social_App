@@ -21,10 +21,21 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:win
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path -LiteralPath $compiler)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Could not install Inno Setup' }
+          }
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          & $compiler "/DAppVersion=$version" scripts/windows-setup.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Could not compile the Windows installer' }
       - name: Verify Windows shortcuts
         shell: pwsh
         run: |
-          $installer = Start-Process -FilePath dist/WG-Social-Studio-Setup.exe -ArgumentList '/S' -Wait -PassThru
+          $installer = Start-Process -FilePath dist/WG-Social-Studio-Setup.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru
           if ($installer.ExitCode -ne 0) {
             throw "Installer failed with exit code $($installer.ExitCode)"
           }
