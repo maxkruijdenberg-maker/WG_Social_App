@@ -1,17 +1,24 @@
 # WG Social Studio
 
-Windows-desktopapp voor het maken van vastgoedposts, het schrijven van bijschriften en het knippen van video's.
+Windows-desktopapp van WG Makelaars voor vastgoedposts, video en publicatie op social media.
 
 ## Openen op Windows
 
-Pak de Windows-zip volledig uit en open **WG Social Studio.exe**. Houd de bestanden uit de zip bij elkaar. Deze versie is gebouwd voor Windows x64.
+Download de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip), pak hem volledig uit en open **WG Social Studio.exe**. Houd de uitgepakte bestanden bij elkaar. Deze versie is voor Windows x64.
 
 ## Werkruimte
 
-- **Post ontwerpen** · kies een onderwerp, upload een woningfoto en pas uitsnede, helderheid en tekst aan. Exporteer de post als PNG.
-- **Templates** · importeer een Canva-PNG met een transparante fotozone. De app zet de foto achter het ontwerp. Geïmporteerde tekst en vormgeving zitten vast in de PNG. Een gewoon beeldvoorbeeld levert een basiskleur en een passend standaardformaat voor het WG-ontwerp. De bibliotheek wordt lokaal opgeslagen.
-- **ChatGPT** · geef een opdracht en voeg eventueel een voorbeeldtekst per onderwerp toe. Gebruik een OpenAI API-sleutel met API-toegang. De sleutel wordt tijdens de sessie gebruikt en niet opgeslagen door de app.
-- **Video-editor** · open een compatibele video, markeer de begin- en eindtijd, zet het geluid zo nodig uit en exporteer het fragment als MP4.
+- **Post ontwerpen** · upload een woningfoto, kies formaat en onderwerp, stel uitsnede en helderheid in en exporteer als PNG. Gebruik het compositieraster voor uitlijning en **F11** voor volledig scherm.
+- **Templates** · importeer een Canva-PNG met een transparante fotozone. De app zet de foto achter het ontwerp. Geïmporteerde tekst en vormgeving zitten vast in de PNG. Een gewoon beeldvoorbeeld levert een basiskleur en passend formaat voor het WG-ontwerp. De bibliotheek wordt lokaal opgeslagen.
+- **ChatGPT** · schrijf bijschriften met optionele voorbeeldteksten per onderwerp. Gebruik een OpenAI API-sleutel met API-toegang. De app bewaart de ingevoerde sleutel alleen tijdens de sessie.
+- **Video-editor** · open bron en voorbeeld, voeg eventueel een prompt toe en kies **Maak AI-montage**. Geselecteerde frames, tijdcodes en scèneovergangen gaan naar OpenAI. FFmpeg monteert lokaal vanuit de bronvideo. De AI kan hard cuts maken, fragmenten herordenen, de verhouding wijzigen, kleuren licht corrigeren en bronaudio behouden of dempen. Het WG-logo is optioneel. Bekijk de montage en sla haar op als MP4. Handmatig knippen blijft beschikbaar.
+
+## Facebook en Instagram
+
+1. Koppel een professioneel Instagram-account aan je Facebook-pagina. Gebruik een Meta-paginatoegangstoken dat die pagina mag beheren en publiceren, inclusief `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic` en `instagram_content_publish` waar vereist door je Meta-app. Meta kan aanvullende goedkeuring of een app-rol vereisen.
+2. Vul op het tabblad **Publiceren** het Facebook-pagina-ID en paginatoegangstoken in. Kies **Accounts koppelen** en controleer beide namen. Het token blijft in het geheugen tot je de app sluit.
+3. Vul je Cloudinary-cloudnaam en een **unsigned** afbeeldingsuploadpreset in. De app uploadt de uiteindelijke afbeelding als openbare JPEG, zodat Instagram die zelf kan ophalen. De afbeelding blijft in je Cloudinary-account staan.
+4. Controleer de preview en het bijschrift en kies **Publiceer op beide**. Kies een Instagram-feedformaat van 4:5, vierkant of 1,91:1. De app toont het resultaat voor elk account. Als één platform faalt, controleer beide accounts voordat je de post elders opnieuw plaatst.
 
 ## Ontwikkelen
 

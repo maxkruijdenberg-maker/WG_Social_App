@@ -16,16 +16,17 @@
     <button data-tab="templates"><i data-icon="layers"></i> Templates</button>
     <button data-tab="text"><i data-icon="sparkles"></i> ChatGPT</button>
     <button data-tab="video"><i data-icon="video"></i> Video-editor</button>
+    <button data-tab="publish"><i data-icon="send"></i> Publiceren</button>
   </nav>
   <div class="side-bottom"><span>WG</span><div><strong>WG Makelaars</strong><small>Lokale werkruimte</small></div></div>
 </aside>
 <main>
-  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><button class="primary" id="export-image"><i data-icon="download"></i> Download PNG</button></header>
+  <header class="topbar"><div><small>WERKRUIMTE</small><h1 id="title">Post ontwerpen</h1></div><div class="actions"><button class="secondary" id="fullscreen" title="Volledig scherm (F11)"><i data-icon="expand"></i> Volledig scherm</button><button class="secondary" id="export-image"><i data-icon="download"></i> Download PNG</button><button class="primary" id="go-publish"><i data-icon="send"></i> Publiceren</button></div></header>
   <section id="design" class="screen design">
     <div class="workspace">
       <div class="workspace-bar"><strong>Voorvertoning</strong><label><span class="sr-only">Formaat</span><select id="format"><option value="1080x1080">Instagram · 1:1</option><option value="1080x1350">Instagram · 4:5</option><option value="1080x1920">Story · 9:16</option><option value="1200x628">Facebook · 1.91:1</option></select></label></div>
       <div class="artboard"><canvas id="post" width="1080" height="1080" aria-label="Voorvertoning van de socialmediapost"></canvas></div>
-      <div class="workspace-footer"><span id="dimensions">1080 × 1080 px</span><span>PNG-export</span></div>
+      <div class="workspace-footer"><span id="dimensions">1080 × 1080 px</span><label class="check"><input type="checkbox" id="show-grid"> Compositieraster</label></div>
     </div>
     <aside class="inspector">
       <h2>Post aanpassen</h2>
@@ -68,10 +69,59 @@
     </div>
   </section>
   <section id="video" class="screen pane" hidden>
-    <div class="section-title"><h2>Video bewerken</h2><p>Bekijk je bronvideo, knip het gewenste fragment en exporteer het als MP4.</p></div>
+    <div class="section-title"><h2>Video monteren met AI</h2><p>Open een bronvideo en een voorbeeldvideo. Voeg je montage-instructies toe en bekijk het resultaat vóór export.</p></div>
     <div class="content-grid video-grid">
-      <div class="card"><div class="video-preview"><video id="player" controls hidden></video><div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div></div><button class="secondary" id="open-video">Video openen</button></div>
-      <article class="card"><h3>Fragment</h3><label>Begin (seconden)<input type="number" id="video-start" min="0" step=".01" value="0"></label><label>Einde (seconden)<input type="number" id="video-end" min="0" step=".01" value="0"></label><button class="secondary" id="play-clip" disabled>Fragment afspelen</button><label class="check"><input type="checkbox" id="mute-video"> Geluid verwijderen</label><button class="primary" id="export-video" disabled>Exporteren als MP4</button></article>
+      <article class="card video-workspace">
+        <div class="video-preview">
+          <video id="player" controls hidden></video>
+          <video id="montage-player" controls hidden></video>
+          <div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div>
+        </div>
+        <div class="actions"><button class="secondary" id="open-video">Bronvideo openen</button><button class="secondary" id="view-source" hidden>Bron</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
+        <p class="hint" id="source-name"></p>
+        <p id="montage-summary" class="hint" hidden></p>
+        <button class="secondary" id="save-montage" hidden><i data-icon="download"></i> AI-montage opslaan</button>
+        <details>
+          <summary>Handmatig een fragment knippen</summary>
+          <div class="row"><label>Begin (seconden)<input type="number" id="video-start" min="0" step=".01" value="0"></label><label>Einde (seconden)<input type="number" id="video-end" min="0" step=".01" value="0"></label></div>
+          <label class="check"><input type="checkbox" id="mute-video"> Geluid verwijderen</label>
+          <div class="actions"><button class="secondary" id="play-clip" disabled>Fragment afspelen</button><button class="secondary" id="export-video" disabled>Fragment opslaan</button></div>
+        </details>
+      </article>
+      <article class="card">
+        <h3>Montage-instructies</h3>
+        <label>Voorbeeldvideo<button class="secondary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen</button><small class="hint" id="reference-name">MP4, MOV, WebM of M4V</small></label>
+        <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="5" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
+        <label>OpenAI API-sleutel<input type="password" id="video-key" autocomplete="off" placeholder="Gebruikt ook de sleutel op het ChatGPT-tabblad"></label>
+        <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
+        <p class="hint">Voor de analyse gaan tijdcodes en geselecteerde stilstaande beelden uit beide video's naar OpenAI.</p>
+        <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
+        <p class="hint" id="montage-status" role="status" hidden></p>
+      </article>
+    </div>
+  </section>
+  <section id="publish" class="screen pane" hidden>
+    <div class="section-title"><h2>Publiceer op Facebook en Instagram</h2><p>Plaats je gemaakte afbeelding met één bijschrift op beide accounts.</p></div>
+    <div class="content-grid publish-grid">
+      <article class="card">
+        <h3>Post controleren</h3>
+        <div class="publish-preview"><img id="publish-image" alt="Voorbeeld van de post die je gaat publiceren"></div>
+        <label>Bijschrift<textarea id="publish-caption" rows="4" maxlength="2200" placeholder="Schrijf een bijschrift voor Facebook en Instagram."></textarea></label>
+        <div class="actions"><button class="secondary" id="import-caption">Neem ChatGPT-tekst over</button><button class="primary" id="publish-post" disabled><i data-icon="send"></i> Publiceer op beide</button></div>
+        <p id="publish-feedback" class="hint" role="status" hidden></p>
+      </article>
+      <article class="card">
+        <h3>Accounts koppelen</h3>
+        <label>Facebook-pagina-ID<input type="text" id="page-id" inputmode="numeric" placeholder="Bijvoorbeeld 1234567890"></label>
+        <label>Meta-paginatoegangstoken<input type="password" id="page-token" autocomplete="off" placeholder="Toegangstoken van je Facebook-pagina"></label>
+        <button class="secondary" id="connect-social">Accounts koppelen</button>
+        <p id="connection-status" class="hint" role="status">Koppel een Facebook-pagina met een professioneel Instagram-account.</p>
+        <hr>
+        <h3>Afbeelding beschikbaar maken</h3>
+        <p class="hint">Instagram haalt de afbeelding op via een openbare HTTPS-link. De app uploadt de post daarvoor naar je Cloudinary-account.</p>
+        <label>Cloudinary-cloudnaam<input id="cloud-name" placeholder="Jouw cloudnaam"></label>
+        <label>Cloudinary-uploadpreset<input id="cloud-preset" placeholder="Naam van een unsigned uploadpreset"></label>
+      </article>
     </div>
   </section>
   <div id="status" role="status" hidden></div>

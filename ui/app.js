@@ -11,6 +11,8 @@ const icons = {
   sparkles: '<path d="M12 3c0 6-3 9-9 9 6 0 9 3 9 9 0-6 3-9 9-9-6 0-9-3-9-9ZM19 3v4m-2-2h4"/>',
   video: '<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m3 19 5-5 3 3 5-6 5 6"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>',
+  expand: '<path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>',
   download: '<path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/>'
 };
 document.querySelectorAll('[data-icon]').forEach(node => {
@@ -51,7 +53,8 @@ function showTab(id) {
   document.querySelectorAll('[data-tab]').forEach(item => item.removeAttribute('aria-current'));
   button.setAttribute('aria-current', 'page');
   $('title').textContent = button.textContent.trim();
-  $('export-image').hidden = id !== 'design';
+  $('export-image').hidden = $('go-publish').hidden = id !== 'design';
+  if (id === 'publish') refreshPublishPreview();
 }
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => showTab(button.dataset.tab));
 
@@ -82,8 +85,19 @@ function cover(ctx, image, x, y, w, h, position) {
   const scale = Math.max(w / image.width, h / image.height);
   const sourceW = w / scale;
   const sourceH = h / scale;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(image, (image.width - sourceW) * position, (image.height - sourceH) * position,
     sourceW, sourceH, x, y, w, h);
+}
+function drawPostLogo(ctx, w, base, margin) {
+  if ($('show-logo').checked && logo.complete && logo.naturalWidth) {
+    const size = Math.round(base * .105);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.roundRect(w - margin - size, margin, size, size * 1.12, size * .09);
+    ctx.fill();
+    ctx.drawImage(logo, w - margin - size * .91, margin + size * .07, size * .82, size * .98);
+  }
 }
 function render() {
   const canvas = $('post');
@@ -104,10 +118,13 @@ function render() {
     ctx.filter = 'none';
   }
   if (overlay) {
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(overlay, 0, 0, w, h);
+    drawPostLogo(ctx, w, base, base * .06);
+    refreshArtboard();
     return;
   }
-  ctx.fillStyle = '#66afe0';
+  ctx.fillStyle = '#f29b42';
   ctx.fillRect(0, h - band, w, base * .009);
   ctx.fillStyle = '#fff';
   ctx.textBaseline = 'middle';
@@ -118,27 +135,36 @@ function render() {
   ctx.fillText($('headline').value, margin, h - band * .49, w - margin * 2.5);
   ctx.font = '400 ' + Math.round(base * .032) + 'px Segoe UI, sans-serif';
   ctx.fillText($('subtitle').value, margin, h - band * .20, w - margin * 2.5);
-  if ($('show-logo').checked && logo.complete && logo.naturalWidth) {
-    const size = Math.round(base * .105);
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.roundRect(w - margin - size, margin, size, size * 1.12, size * .09);
-    ctx.fill();
-    ctx.drawImage(logo, w - margin - size * .91, margin + size * .07, size * .82, size * .98);
-  }
+  drawPostLogo(ctx, w, base, margin);
+  refreshArtboard();
+}
+function refreshArtboard() {
+  resizeArtboard();
+  if (!$('publish').hidden) refreshPublishPreview();
 }
 async function chooseTemplate(template) {
   const version = ++selection;
   activeTemplate = template;
   overlay = undefined;
   $('headline').value = template.headline;
-  ['headline', 'subtitle', 'show-logo'].forEach(id => { $(id).disabled = template.mode === 'overlay'; });
+  ['headline', 'subtitle'].forEach(id => { $(id).disabled = template.mode === 'overlay'; });
+  const customFormat = $('format').querySelector('[data-custom]');
+  if (customFormat) customFormat.remove();
   if (template.ratio) {
     const formats = [...$('format').options];
     const ratio = option => option.value.split('x').map(Number).reduce((w, h) => w / h);
     formats.sort((a, b) => Math.abs(Math.log(ratio(a) / template.ratio))
       - Math.abs(Math.log(ratio(b) / template.ratio)));
     $('format').value = formats[0].value;
+    if (template.mode === 'overlay' && Math.abs(ratio(formats[0]) - template.ratio) > .015) {
+      const scale = Math.min(1, 4096 / Math.max(template.width || 1080, template.height || 1080));
+      const w = Math.round((template.width || 1080) * scale);
+      const h = Math.round((template.height || (1080 / template.ratio)) * scale);
+      const option = new Option('Origineel Canva-formaat', w + 'x' + h);
+      option.dataset.custom = 'true';
+      $('format').add(option);
+      $('format').value = option.value;
+    }
   }
   if (template.mode === 'overlay') {
     try {
@@ -236,7 +262,7 @@ $('add-template').onclick = async () => {
     const image = await imageFromFile(file);
     const mode = $('template-mode').value;
     if (mode === 'overlay' && file.type !== 'image/png') return status('Gebruik een transparante PNG voor een overlay.');
-    const template = { id: crypto.randomUUID(), name, topic, file, mode, headline: topic, color: referenceColor(image), ratio: image.width / image.height };
+    const template = { id: crypto.randomUUID(), name, topic, file, mode, headline: topic, color: referenceColor(image), ratio: image.width / image.height, width: image.width, height: image.height };
     await libraryRequest('readwrite', store => store.add(template));
     templates.push(template);
     refreshLibrary(topic, template.id);
@@ -284,7 +310,10 @@ $('open-video').onclick = async () => {
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     clipEnd = undefined;
     $('export-video').disabled = $('play-clip').disabled = true;
-    videoUrl = URL.createObjectURL(new Blob([file]));
+    resetMontage();
+    $('source-name').textContent = file.name;
+    videoUrl = URL.createObjectURL(new Blob([file.bytes], { type: 'video/mp4' }));
+    updateMontageAction();
     player.src = videoUrl;
   } catch (error) { status(error.message); }
 };
@@ -312,6 +341,7 @@ function clipRange() {
 $('play-clip').onclick = async () => {
   const range = clipRange();
   if (!range) return;
+  showVideo('source');
   clipEnd = range.end;
   player.currentTime = range.start;
   try { await player.play(); } catch (error) { status(error.message); }
@@ -334,6 +364,172 @@ $('export-video').onclick = async () => {
     }
   } catch (error) { status(error.message); }
   finally { $('export-video').disabled = $('open-video').disabled = false; }
+};
+
+const artboard = document.querySelector('.artboard');
+const canvas = $('post');
+const canvasWrap = document.createElement('div');
+canvasWrap.className = 'canvas-wrap';
+artboard.insertBefore(canvasWrap, canvas);
+canvasWrap.append(canvas);
+function resizeArtboard() {
+  const style = getComputedStyle(artboard);
+  const width = artboard.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const height = artboard.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+  const scale = Math.min(width / canvas.width, height / canvas.height);
+  if (scale > 0) {
+    canvasWrap.style.width = Math.floor(canvas.width * scale) + 'px';
+    canvasWrap.style.height = Math.floor(canvas.height * scale) + 'px';
+  }
+}
+new ResizeObserver(resizeArtboard).observe(artboard);
+$('show-grid').onchange = () => canvasWrap.classList.toggle('grid-visible', $('show-grid').checked);
+
+async function toggleFullscreen() {
+  try {
+    if (window.desktop) {
+      await window.desktop.toggleFullscreen();
+    } else if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement.requestFullscreen();
+    }
+  } catch (error) { status(error.message); }
+}
+$('fullscreen').onclick = toggleFullscreen;
+document.addEventListener('keydown', event => {
+  if (event.key === 'F11') {
+    event.preventDefault();
+    toggleFullscreen();
+  }
+});
+
+let reference;
+let montageUrl;
+let makingMontage = false;
+const montagePlayer = $('montage-player');
+function showVideo(which) {
+  const showMontage = which === 'montage' && Boolean(montageUrl);
+  (showMontage ? player : montagePlayer).pause();
+  montagePlayer.hidden = !showMontage;
+  player.hidden = showMontage || !videoUrl || player.readyState < 1;
+  $('video-empty').hidden = showMontage || !player.hidden;
+  $('view-source').setAttribute('aria-pressed', String(!showMontage));
+  $('view-montage').setAttribute('aria-pressed', String(showMontage));
+}
+function resetMontage() {
+  if (montageUrl) {
+    montagePlayer.pause();
+    montagePlayer.removeAttribute('src');
+    montagePlayer.load();
+    URL.revokeObjectURL(montageUrl);
+  }
+  montageUrl = undefined;
+  ['view-source', 'view-montage', 'save-montage', 'montage-summary', 'montage-status'].forEach(id => { $(id).hidden = true; });
+  showVideo('source');
+}
+function updateMontageAction() {
+  $('generate-montage').disabled = !videoUrl || !reference || makingMontage;
+}
+$('view-source').onclick = () => showVideo('source');
+$('view-montage').onclick = () => showVideo('montage');
+$('open-reference').onclick = async () => {
+  if (!window.desktop) return status('Open de desktopapp om een voorbeeldvideo te selecteren.');
+  try {
+    const name = await window.desktop.openVideoReference();
+    if (!name) return;
+    reference = name;
+    $('reference-name').textContent = name;
+    resetMontage();
+    updateMontageAction();
+  } catch (error) { status(error.message); }
+};
+$('generate-montage').onclick = async () => {
+  makingMontage = true;
+  updateMontageAction();
+  $('open-video').disabled = $('open-reference').disabled = true;
+  const feedback = $('montage-status');
+  feedback.hidden = false;
+  feedback.textContent = 'Beelden analyseren en de montage maken…';
+  try {
+    const result = await window.desktop.generateMontage({
+      key: $('video-key').value.trim() || $('api-key').value,
+      prompt: $('video-prompt').value.trim(),
+      showLogo: $('video-logo').checked
+    });
+    resetMontage();
+    montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
+    montagePlayer.src = montageUrl;
+    $('montage-summary').textContent = result.summary;
+    ['view-source', 'view-montage', 'save-montage', 'montage-summary'].forEach(id => { $(id).hidden = false; });
+    showVideo('montage');
+  } catch (error) { feedback.textContent = error.message; }
+  finally {
+    makingMontage = false;
+    $('open-video').disabled = $('open-reference').disabled = false;
+    updateMontageAction();
+  }
+};
+$('save-montage').onclick = async () => {
+  try {
+    if (await window.desktop.saveMontage()) status('AI-montage opgeslagen.');
+  } catch (error) { status(error.message); }
+};
+
+let publishPreviewUrl;
+let accountsConnected = false;
+let sentPost;
+function refreshPublishPreview() {
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    if (publishPreviewUrl) URL.revokeObjectURL(publishPreviewUrl);
+    publishPreviewUrl = URL.createObjectURL(blob);
+    $('publish-image').src = publishPreviewUrl;
+  }, 'image/jpeg', .94);
+}
+$('go-publish').onclick = () => showTab('publish');
+$('import-caption').onclick = () => { $('publish-caption').value = $('copy-output').value; };
+$('connect-social').onclick = async () => {
+  if (!window.desktop) return status('Open de desktopapp om je accounts te koppelen.');
+  const button = $('connect-social');
+  const feedback = $('connection-status');
+  button.disabled = true;
+  try {
+    const accounts = await window.desktop.connectSocial({ pageId: $('page-id').value.trim(), token: $('page-token').value });
+    feedback.textContent = 'Gekoppeld · ' + accounts.facebook + ' en @' + accounts.instagram;
+    accountsConnected = true;
+    $('page-token').value = '';
+  } catch (error) { feedback.textContent = error.message; }
+  finally {
+    button.disabled = false;
+    $('publish-post').disabled = !accountsConnected;
+  }
+};
+$('publish-post').onclick = async () => {
+  const button = $('publish-post');
+  const feedback = $('publish-feedback');
+  button.disabled = $('connect-social').disabled = true;
+  try {
+    const caption = $('publish-caption').value.trim();
+    const { width, height } = canvas;
+    const image = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .94));
+    const bytes = new Uint8Array(await image.arrayBuffer());
+    const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))).join(',');
+    if (sentPost?.fingerprint === fingerprint && sentPost?.caption === caption) {
+      throw new Error('Deze post is al verzonden. Controleer de resultaten per account voordat je verdergaat.');
+    }
+    const result = await window.desktop.publishSocial({
+      bytes, width, height, caption,
+      cloud: $('cloud-name').value.trim(), preset: $('cloud-preset').value.trim()
+    });
+    if (!result) return;
+    sentPost = { fingerprint, caption };
+    feedback.hidden = false;
+    feedback.textContent = [['Facebook', result.facebook], ['Instagram', result.instagram]].map(([name, delivery]) => (
+      name + (delivery.id ? ' · gepubliceerd (' + delivery.id + ')' : ' · controleer je account: ' + delivery.error)
+    )).join('\n');
+  } catch (error) { status(error.message); }
+  finally { button.disabled = !accountsConnected; $('connect-social').disabled = false; }
 };
 
 showTab('design');
