@@ -494,6 +494,13 @@ if (window.desktop?.listVideoTemplates) {
   }).catch(error => status(error.message));
 }
 
+$('video-cards').onchange = () => { $('video-card-details').hidden = !$('video-cards').checked; };
+$('video-contact').value = localStorage.getItem('wg-video-contact') || '';
+$('video-contact').onchange = () => {
+  try { localStorage.setItem('wg-video-contact', $('video-contact').value); }
+  catch (error) { status(error.message); }
+};
+
 $('generate-montage').onclick = async () => {
   makingMontage = true;
   updateMontageAction();
@@ -503,7 +510,11 @@ $('generate-montage').onclick = async () => {
     const result = await window.desktop.generateMontage({
       prompt: $('video-prompt').value.trim(),
       showLogo: $('video-logo').checked,
-      templateId: activeVideoTemplate.id
+      templateId: activeVideoTemplate.id,
+      animateCards: $('video-cards').checked,
+      address: $('video-address').value,
+      city: $('video-city').value,
+      contact: $('video-contact').value
     });
     resetMontage();
     montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));

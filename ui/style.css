@@ -141,3 +141,5 @@ details #play-clip{margin:0}
 .key-input i svg{width:15px;height:15px}
 
 .library-tools{display:grid;gap:16px;min-width:0}
+
+.video-actions{margin-top:12px}

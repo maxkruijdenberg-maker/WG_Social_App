@@ -67,7 +67,11 @@ async function requestText(token, input, timeout = 60000) {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     if (response.status === 401) throw new Error('OpenAI weigert de API-sleutel. Controleer of vervang die bij Instellingen.');
-    if (response.status === 403 || response.status === 404) throw new Error('Dit OpenAI-project heeft geen toegang tot het vereiste model.');
+    if (response.status === 403 || response.status === 404 || body.error?.code === 'model_not_found') {
+      const error = new Error('Dit OpenAI-project heeft geen toegang tot het vereiste model.');
+      error.code = 'OPENAI_MODEL_UNAVAILABLE';
+      throw error;
+    }
     if (body.error?.code === 'insufficient_quota' || response.status === 402) {
       throw new Error('Het OpenAI-project heeft geen API-tegoed. Controleer facturering bij OpenAI.');
     }

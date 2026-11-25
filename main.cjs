@@ -121,13 +121,15 @@ ipcMain.handle('preview-video-template', async (_, id) => {
   return { bytes: await readFile(template.file), type: template.type };
 });
 
-ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId }) => {
+ipcMain.handle('generate-montage', async (_, { prompt, showLogo, templateId, address, city, contact, animateCards }) => {
   const source = selectedVideo;
   if (!source) throw new Error('Laad eerst de video die je wilt bewerken.');
   const reference = await getVideoTemplate(videoLibraryPath(), templateId);
   const token = await keyStore().requireKey();
+  const assets = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui');
+  const graphics = animateCards ? { address, city, contact, badge: showLogo ? path.join(assets, 'video-badge.png') : undefined } : undefined;
   const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
-    showLogo ? path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui', 'icon.png') : undefined);
+    showLogo ? path.join(assets, 'icon.png') : undefined, graphics);
   if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
   return result;
 });

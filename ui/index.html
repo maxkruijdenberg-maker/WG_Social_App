@@ -119,6 +119,13 @@
           <div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div>
         </div>
         <div class="actions"><button class="secondary" id="view-source" hidden>Ingeladen video</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
+        <div class="video-actions">
+        <div class="actions">
+          <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
+          <button class="secondary" id="save-montage" aria-describedby="montage-status" disabled><i data-icon="download"></i> Download MP4</button>
+        </div>
+        <p class="hint" id="montage-status" role="status">De download wordt beschikbaar zodra je montage klaar is.</p>
+        </div>
         <p id="montage-summary" class="hint" hidden></p>
         <details>
           <summary>Handmatig een fragment knippen</summary>
@@ -138,13 +145,13 @@
         <hr>
         <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
         <p class="hint ai-key-link" hidden>OpenAI-sleutel nodig. <button class="secondary" type="button" data-open-settings>API-sleutel instellen</button></p>
-        <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
-        <p class="hint">Voor de analyse gaan tijdcodes en geselecteerde stilstaande beelden uit beide video's naar OpenAI.</p>
-        <div class="actions">
-          <button class="primary" id="generate-montage" disabled><i data-icon="sparkles"></i> Maak AI-montage</button>
-          <button class="secondary" id="save-montage" aria-describedby="montage-status" disabled><i data-icon="download"></i> Download MP4</button>
+        <label class="check"><input type="checkbox" id="video-cards" checked> Adresbalk en geanimeerde contactkaart toevoegen</label>
+        <div id="video-card-details">
+          <div class="row"><label>Adres<input id="video-address" maxlength="100" placeholder="Bijvoorbeeld Parklaan 24"></label><label>Plaats<input id="video-city" maxlength="65" placeholder="Plaatsnaam"></label></div>
+          <label>Contactregels<textarea id="video-contact" rows="3" maxlength="300" placeholder="Telefoon, e-mail en website op aparte regels"></textarea></label>
         </div>
-        <p class="hint" id="montage-status" role="status">De download wordt beschikbaar zodra je montage klaar is.</p>
+        <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
+        <p class="hint">Gebruik voor de woning beelden zonder ingebakken titels. Voor de analyse gaan tijdcodes en geselecteerde frames uit beide video's naar OpenAI.</p>
       </article>
     </div>
   </section>
