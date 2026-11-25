@@ -69,16 +69,16 @@
     </div>
   </section>
   <section id="video" class="screen pane" hidden>
-    <div class="section-title"><h2>Video monteren met AI</h2><p>Open een bronvideo en een voorbeeldvideo. Voeg je montage-instructies toe en bekijk het resultaat vóór export.</p></div>
+    <div class="section-title"><h2>Video monteren met AI</h2><p>Laad de video die je wilt bewerken en kies een videotemplate voor de gewenste stijl.</p></div>
     <div class="content-grid video-grid">
       <article class="card video-workspace">
         <div class="video-preview">
           <video id="player" controls hidden></video>
+          <video id="reference-player" controls hidden></video>
           <video id="montage-player" controls hidden></video>
           <div id="video-empty"><i data-icon="video"></i><strong>Je videovoorbeeld</strong><small>Open een MP4-, MOV- of WebM-bestand</small></div>
         </div>
-        <div class="actions"><button class="secondary" id="open-video">Bronvideo openen</button><button class="secondary" id="view-source" hidden>Bron</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
-        <p class="hint" id="source-name"></p>
+        <div class="actions"><button class="secondary" id="view-source" hidden>Bron</button><button class="secondary" id="view-montage" hidden>AI-montage</button></div>
         <p id="montage-summary" class="hint" hidden></p>
         <button class="secondary" id="save-montage" hidden><i data-icon="download"></i> AI-montage opslaan</button>
         <details>
@@ -88,10 +88,24 @@
           <div class="actions"><button class="secondary" id="play-clip" disabled>Fragment afspelen</button><button class="secondary" id="export-video" disabled>Fragment opslaan</button></div>
         </details>
       </article>
-      <article class="card">
-        <h3>Montage-instructies</h3>
-        <label>Voorbeeldvideo<button class="secondary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen</button><small class="hint" id="reference-name">MP4, MOV, WebM of M4V</small></label>
-        <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="5" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
+      <article class="card video-settings">
+        <h3>Bronvideo</h3>
+        <p class="hint">Deze video wordt bewerkt.</p>
+        <button class="secondary" id="open-video"><i data-icon="video"></i> Bronvideo inladen</button>
+        <p class="hint" id="source-name">Nog geen bronvideo ingeladen.</p>
+        <hr>
+        <h3>Videotemplate</h3>
+        <label>Opgeslagen voorbeeldvideo<select id="video-template"><option value="">Kies een videotemplate</option></select></label>
+        <button class="secondary" id="preview-template" aria-pressed="false" disabled>Voorbeeld bekijken</button>
+        <details id="video-template-import">
+          <summary>Nieuw videotemplate toevoegen</summary>
+          <label>Naam (optioneel)<input id="video-template-name" maxlength="100" placeholder="Bijvoorbeeld Woningtour"></label>
+          <label>Onderwerp (optioneel)<input id="video-template-topic" list="topics" maxlength="75" placeholder="Bijvoorbeeld Nieuw in verkoop"></label>
+          <button class="secondary" id="open-reference"><i data-icon="video"></i> Voorbeeldvideo kiezen en bewaren</button>
+          <p class="hint">De app bewaart een lokale kopie van dit voorbeeld.</p>
+        </details>
+        <hr>
+        <label>Instructie voor ChatGPT<textarea id="video-prompt" rows="3" maxlength="3000" placeholder="Maak bijvoorbeeld een verticale tour van 20 seconden. Begin met de gevel, houd het tempo van het voorbeeld aan en maak het beeld iets lichter."></textarea></label>
         <label>OpenAI API-sleutel<input type="password" id="video-key" autocomplete="off" placeholder="Gebruikt ook de sleutel op het ChatGPT-tabblad"></label>
         <label class="check"><input type="checkbox" id="video-logo" checked> WG-logo in de montage tonen</label>
         <p class="hint">Voor de analyse gaan tijdcodes en geselecteerde stilstaande beelden uit beide video's naar OpenAI.</p>

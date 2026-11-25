@@ -3,9 +3,9 @@ const { readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { createMontage, runFfmpeg } = require('./montage.cjs');
 const social = require('./social.cjs');
+const { addVideoTemplate, getVideoTemplate, listVideoTemplates, videoType } = require('./video-templates.cjs');
 
 let selectedVideo;
-let referenceVideo;
 let montage;
 let connection;
 let publishing = false;
@@ -50,7 +50,7 @@ ipcMain.handle('open-video', async () => {
   const bytes = await readFile(filePaths[0]);
   selectedVideo = filePaths[0];
   montage = undefined;
-  return { bytes, name: path.basename(selectedVideo) };
+  return { bytes, name: path.basename(selectedVideo), type: videoType(selectedVideo) };
 });
 
 ipcMain.handle('export-video', async (_, { start, end, muted }) => {
@@ -101,34 +101,45 @@ ipcMain.handle('toggle-fullscreen', event => {
   return fullscreen;
 });
 
-ipcMain.handle('open-video-reference', async () => {
+function videoLibraryPath() {
+  return path.join(app.getPath('userData'), 'video-templates');
+}
+
+ipcMain.handle('list-video-templates', () => listVideoTemplates(videoLibraryPath()));
+
+ipcMain.handle('import-video-template', async (_, fields) => {
   const { canceled, filePaths } = await pickVideo();
-  if (canceled) return null;
-  referenceVideo = filePaths[0];
-  montage = undefined;
-  return path.basename(referenceVideo);
+  return canceled ? null : addVideoTemplate(videoLibraryPath(), filePaths[0], fields);
 });
 
-ipcMain.handle('generate-montage', async (_, { key, prompt, showLogo }) => {
+ipcMain.handle('preview-video-template', async (_, id) => {
+  const template = await getVideoTemplate(videoLibraryPath(), id);
+  return { bytes: await readFile(template.file), type: template.type };
+});
+
+ipcMain.handle('generate-montage', async (_, { key, prompt, showLogo, templateId }) => {
   const token = key?.trim() || process.env.OPENAI_API_KEY;
-  if (!selectedVideo || !referenceVideo) throw new Error('Open een bronvideo en een voorbeeldvideo.');
+  const source = selectedVideo;
+  if (!source) throw new Error('Laad eerst de bronvideo die je wilt laten bewerken.');
+  const reference = await getVideoTemplate(videoLibraryPath(), templateId);
   if (!token) throw new Error('Vul je OpenAI API-sleutel in om de montage te maken.');
-  const result = await createMontage(ffmpegBinary(), selectedVideo, referenceVideo, prompt, token,
+  const result = await createMontage(ffmpegBinary(), source, reference.file, prompt, token,
     showLogo ? path.join(app.isPackaged ? process.resourcesPath : __dirname, 'ui', 'icon.png') : undefined);
-  montage = result.bytes;
+  if (source === selectedVideo) montage = { bytes: result.bytes, source, reference: reference.file };
   return result;
 });
 
 ipcMain.handle('save-montage', async () => {
-  if (!montage) throw new Error('Maak eerst een AI-montage.');
+  const output = montage;
+  if (!output) throw new Error('Maak eerst een AI-montage.');
   const { canceled, filePath } = await dialog.showSaveDialog({
     defaultPath: 'WG-AI-montage.mp4', filters: [{ name: 'MP4-video', extensions: ['mp4'] }]
   });
   if (canceled) return false;
-  if ([selectedVideo, referenceVideo].some(input => path.resolve(input).toLowerCase() === path.resolve(filePath).toLowerCase())) {
+  if ([output.source, output.reference].some(input => path.resolve(input).toLowerCase() === path.resolve(filePath).toLowerCase())) {
     throw new Error('Kies een andere bestandsnaam dan die van de bron- of voorbeeldvideo.');
   }
-  await writeFile(filePath, montage);
+  await writeFile(filePath, output.bytes);
   return true;
 });
 

@@ -301,9 +301,13 @@ $('copy-text').onclick = async () => {
 
 let videoUrl;
 let clipEnd;
+let openingSource = false;
+let exportingVideo = false;
 const player = $('player');
 $('open-video').onclick = async () => {
   if (!window.desktop) return status('Open de desktopapp om een video te bewerken.');
+  openingSource = true;
+  updateMontageAction();
   try {
     const file = await window.desktop.openVideo();
     if (!file) return;
@@ -312,21 +316,21 @@ $('open-video').onclick = async () => {
     $('export-video').disabled = $('play-clip').disabled = true;
     resetMontage();
     $('source-name').textContent = file.name;
-    videoUrl = URL.createObjectURL(new Blob([file.bytes], { type: 'video/mp4' }));
+    videoUrl = URL.createObjectURL(new Blob([file.bytes], { type: file.type }));
     updateMontageAction();
     player.src = videoUrl;
+    $('view-source').hidden = false;
   } catch (error) { status(error.message); }
+  finally { openingSource = false; updateMontageAction(); }
 };
 player.onloadedmetadata = () => {
-  $('video-empty').hidden = true;
-  player.hidden = false;
+  if (visibleVideo === 'source') showVideo('source');
   $('video-start').value = 0;
   $('video-end').value = player.duration;
   $('export-video').disabled = $('play-clip').disabled = !Number.isFinite(player.duration);
 };
 player.onerror = () => {
-  player.hidden = true;
-  $('video-empty').hidden = false;
+  if (visibleVideo === 'source') showVideo('source');
   status('Dit videobestand kan niet worden afgespeeld. Probeer een MP4 met H.264.');
 };
 function clipRange() {
@@ -356,14 +360,16 @@ $('mute-video').onchange = () => { player.muted = $('mute-video').checked; };
 $('export-video').onclick = async () => {
   const range = clipRange();
   if (!range) return;
-  $('export-video').disabled = $('open-video').disabled = true;
+  exportingVideo = true;
+  $('export-video').disabled = true;
+  updateMontageAction();
   status('Video exporteren…');
   try {
     if (await window.desktop.exportVideo({ ...range, muted: $('mute-video').checked })) {
       status('MP4 opgeslagen.');
     }
   } catch (error) { status(error.message); }
-  finally { $('export-video').disabled = $('open-video').disabled = false; }
+  finally { exportingVideo = false; $('export-video').disabled = false; updateMontageAction(); }
 };
 
 const artboard = document.querySelector('.artboard');
@@ -404,20 +410,35 @@ document.addEventListener('keydown', event => {
   }
 });
 
-let reference;
+let videoTemplates = [];
+let referenceUrl;
+let referenceId;
 let montageUrl;
+let visibleVideo = 'source';
 let makingMontage = false;
+let importingTemplate = false;
+const referencePlayer = $('reference-player');
 const montagePlayer = $('montage-player');
+const templateSelect = $('video-template');
 montagePlayer.onloadedmetadata = () => { montagePlayer.currentTime = Math.min(.08, montagePlayer.duration / 2); };
+
 function showVideo(which) {
-  const showMontage = which === 'montage' && Boolean(montageUrl);
-  (showMontage ? player : montagePlayer).pause();
-  montagePlayer.hidden = !showMontage;
-  player.hidden = showMontage || !videoUrl || player.readyState < 1;
-  $('video-empty').hidden = showMontage || !player.hidden;
-  $('view-source').setAttribute('aria-pressed', String(!showMontage));
-  $('view-montage').setAttribute('aria-pressed', String(showMontage));
+  visibleVideo = which;
+  const visible = {
+    source: which === 'source' && Boolean(videoUrl) && player.readyState >= 1 && !player.error,
+    reference: which === 'reference' && Boolean(referenceUrl),
+    montage: which === 'montage' && Boolean(montageUrl)
+  };
+  for (const [name, video] of [['source', player], ['reference', referencePlayer], ['montage', montagePlayer]]) {
+    video.hidden = !visible[name];
+    if (video.hidden) video.pause();
+  }
+  $('video-empty').hidden = Object.values(visible).some(Boolean);
+  $('view-source').setAttribute('aria-pressed', String(visible.source));
+  $('preview-template').setAttribute('aria-pressed', String(visible.reference));
+  $('view-montage').setAttribute('aria-pressed', String(visible.montage));
 }
+
 function resetMontage() {
   if (montageUrl) {
     montagePlayer.pause();
@@ -426,29 +447,95 @@ function resetMontage() {
     URL.revokeObjectURL(montageUrl);
   }
   montageUrl = undefined;
-  ['view-source', 'view-montage', 'save-montage', 'montage-summary', 'montage-status'].forEach(id => { $(id).hidden = true; });
+  ['view-montage', 'save-montage', 'montage-summary', 'montage-status'].forEach(id => { $(id).hidden = true; });
+  $('view-source').hidden = !videoUrl;
   showVideo('source');
 }
+
 function updateMontageAction() {
-  $('generate-montage').disabled = !videoUrl || !reference || makingMontage;
+  const active = makingMontage || openingSource || exportingVideo || importingTemplate;
+  $('open-video').disabled = active;
+  $('open-reference').disabled = active;
+  templateSelect.disabled = makingMontage || importingTemplate;
+  $('preview-template').disabled = !templateSelect.value || makingMontage || importingTemplate;
+  $('generate-montage').disabled = active || !videoUrl || !templateSelect.value;
 }
+
+function refreshVideoTemplates(id = '') {
+  setOptions(templateSelect, [
+    ['', 'Kies een videotemplate'],
+    ...videoTemplates.map(template => [template.id, [template.topic, template.name].filter(Boolean).join(' · ')])
+  ]);
+  templateSelect.value = videoTemplates.some(template => template.id === id) ? id : '';
+  updateMontageAction();
+}
+
+function changeVideoTemplate() {
+  if (referenceUrl) {
+    referencePlayer.pause();
+    referencePlayer.removeAttribute('src');
+    referencePlayer.load();
+    URL.revokeObjectURL(referenceUrl);
+    referenceUrl = undefined;
+  }
+  referenceId = undefined;
+  resetMontage();
+  updateMontageAction();
+}
+
+templateSelect.onchange = changeVideoTemplate;
 $('view-source').onclick = () => showVideo('source');
 $('view-montage').onclick = () => showVideo('montage');
-$('open-reference').onclick = async () => {
-  if (!window.desktop) return status('Open de desktopapp om een voorbeeldvideo te selecteren.');
+referencePlayer.onerror = () => {
+  if (referenceUrl && visibleVideo === 'reference') {
+    showVideo('source');
+    status('Deze voorbeeldvideo kan niet worden afgespeeld. Probeer een MP4 met H.264.');
+  }
+};
+$('preview-template').onclick = async () => {
+  const id = templateSelect.value;
+  if (!id) return;
+  if (referenceId === id && referenceUrl) return showVideo('reference');
   try {
-    const name = await window.desktop.openVideoReference();
-    if (!name) return;
-    reference = name;
-    $('reference-name').textContent = name;
-    resetMontage();
-    updateMontageAction();
+    const file = await window.desktop.previewVideoTemplate(id);
+    if (templateSelect.value !== id || referenceId === id) return;
+    referenceUrl = URL.createObjectURL(new Blob([file.bytes], { type: file.type }));
+    referenceId = id;
+    referencePlayer.src = referenceUrl;
+    showVideo('reference');
   } catch (error) { status(error.message); }
 };
+$('open-reference').onclick = async () => {
+  if (!window.desktop) return status('Open de desktopapp om een videotemplate toe te voegen.');
+  importingTemplate = true;
+  updateMontageAction();
+  try {
+    const template = await window.desktop.importVideoTemplate({
+      name: $('video-template-name').value,
+      topic: $('video-template-topic').value
+    });
+    if (!template) return;
+    videoTemplates.push(template);
+    refreshVideoTemplates(template.id);
+    changeVideoTemplate();
+    $('video-template-name').value = '';
+    $('video-template-topic').value = '';
+    $('video-template-import').open = false;
+    status('Videotemplate bewaard.');
+  } catch (error) { status(error.message); }
+  finally { importingTemplate = false; updateMontageAction(); }
+};
+if (window.desktop?.listVideoTemplates) {
+  window.desktop.listVideoTemplates().then(items => {
+    const known = new Set(videoTemplates.map(item => item.id));
+    videoTemplates.push(...items.filter(item => !known.has(item.id)));
+    refreshVideoTemplates(templateSelect.value);
+  }).catch(error => status(error.message));
+}
+
 $('generate-montage').onclick = async () => {
   makingMontage = true;
   updateMontageAction();
-  $('open-video').disabled = $('open-reference').disabled = true;
   const feedback = $('montage-status');
   feedback.hidden = false;
   feedback.textContent = 'Beelden analyseren en de montage maken…';
@@ -456,7 +543,8 @@ $('generate-montage').onclick = async () => {
     const result = await window.desktop.generateMontage({
       key: $('video-key').value.trim() || $('api-key').value,
       prompt: $('video-prompt').value.trim(),
-      showLogo: $('video-logo').checked
+      showLogo: $('video-logo').checked,
+      templateId: templateSelect.value
     });
     resetMontage();
     montageUrl = URL.createObjectURL(new Blob([result.bytes], { type: 'video/mp4' }));
@@ -467,7 +555,6 @@ $('generate-montage').onclick = async () => {
   } catch (error) { feedback.textContent = error.message; }
   finally {
     makingMontage = false;
-    $('open-video').disabled = $('open-reference').disabled = false;
     updateMontageAction();
   }
 };

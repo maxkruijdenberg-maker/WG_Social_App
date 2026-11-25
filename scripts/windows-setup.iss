@@ -14,12 +14,13 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist
 OutputBaseFilename=WG-Social-Studio-Setup
-UninstallDisplayIcon={app}\WG Social Studio.exe
+SetupIconFile=..\ui\icon.ico
+UninstallDisplayIcon={app}\resources\ui\icon.ico
 Compression=lzma2/fast
 
 [Files]
 Source: "..\dist\win-unpacked\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{userdesktop}\WG Social Studio"; Filename: "{app}\WG Social Studio.exe"; WorkingDir: "{app}"
-Name: "{userprograms}\WG Social Studio"; Filename: "{app}\WG Social Studio.exe"; WorkingDir: "{app}"
+Name: "{userdesktop}\WG Social Studio"; Filename: "{app}\WG Social Studio.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\ui\icon.ico"
+Name: "{userprograms}\WG Social Studio"; Filename: "{app}\WG Social Studio.exe"; WorkingDir: "{app}"; IconFilename: "{app}\resources\ui\icon.ico"

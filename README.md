@@ -4,7 +4,7 @@ Windows-desktopapp van WG Makelaars voor vastgoedposts, video en publicatie op s
 
 ## Openen op Windows
 
-Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** op je bureaublad en in het Startmenu.
+Open het [Windows-installatiebestand](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Setup.exe) op Windows x64. De installatie maakt automatisch de snelkoppeling **WG Social Studio** met het WG-logo op je bureaublad en in het Startmenu.
 
 Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_App/releases/latest/download/WG-Social-Studio-Windows.zip) volledig uitpakken en **WG Social Studio.exe** openen. Houd dan de uitgepakte bestanden bij elkaar.
 
@@ -13,7 +13,7 @@ Je kunt ook de [Windows-zip](https://github.com/maxkruijdenberg-maker/WG_Social_
 - **Post ontwerpen** · upload een woningfoto, kies formaat en onderwerp, stel uitsnede en helderheid in en exporteer als PNG. Gebruik het compositieraster voor uitlijning en **F11** voor volledig scherm.
 - **Templates** · importeer een Canva-PNG met een transparante fotozone. De app zet de foto achter het ontwerp. Geïmporteerde tekst en vormgeving zitten vast in de PNG. Een gewoon beeldvoorbeeld levert een basiskleur en passend formaat voor het WG-ontwerp. De bibliotheek wordt lokaal opgeslagen.
 - **ChatGPT** · schrijf bijschriften met optionele voorbeeldteksten per onderwerp. Gebruik een OpenAI API-sleutel met API-toegang. De app bewaart de ingevoerde sleutel alleen tijdens de sessie.
-- **Video-editor** · open bron en voorbeeld, voeg eventueel een prompt toe en kies **Maak AI-montage**. Geselecteerde frames, tijdcodes en scèneovergangen gaan naar OpenAI. FFmpeg monteert lokaal vanuit de bronvideo. De AI kan hard cuts maken, fragmenten herordenen, de verhouding wijzigen, kleuren licht corrigeren en bronaudio behouden of dempen. Het WG-logo is optioneel. Bekijk de montage en sla haar op als MP4. Handmatig knippen blijft beschikbaar.
+- **Video-editor** · laad onder **Bronvideo** het bestand dat je wilt laten bewerken. Kies onder **Videotemplate** een opgeslagen voorbeeld of voeg een nieuw voorbeeld toe. De app bewaart een lokale kopie van het voorbeeld zodat je het opnieuw kunt gebruiken. Voeg eventueel een prompt toe en kies **Maak AI-montage**. Geselecteerde frames, tijdcodes en scèneovergangen gaan naar OpenAI. FFmpeg monteert lokaal vanuit de bronvideo. De AI kan hard cuts maken, fragmenten herordenen, de verhouding wijzigen, kleuren licht corrigeren en bronaudio behouden of dempen. Het WG-logo is optioneel. Bekijk de montage en sla haar op als MP4. Handmatig knippen blijft beschikbaar.
 
 ## Facebook en Instagram
 

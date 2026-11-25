@@ -45,10 +45,16 @@ jobs:
             if (-not (Test-Path -LiteralPath $link -PathType Leaf)) {
               throw "Missing shortcut $link"
             }
-            $target = $shell.CreateShortcut($link).TargetPath
+            $shortcut = $shell.CreateShortcut($link)
+            $target = $shortcut.TargetPath
             if (-not (Test-Path -LiteralPath $target -PathType Leaf) -or
                 (Split-Path -Leaf $target) -ne 'WG Social Studio.exe') {
               throw "Invalid shortcut target for $link"
+            }
+            $icon = ($shortcut.IconLocation -split ',', 2)[0]
+            $expected = Join-Path (Split-Path -Parent $target) 'resources\ui\icon.ico'
+            if ($icon -ne $expected -or (Get-FileHash -LiteralPath $icon).Hash -ne (Get-FileHash ui/icon.ico).Hash) {
+              throw "Wrong WG shortcut icon for $link"
             }
             $target
           }

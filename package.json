@@ -1,6 +1,6 @@
 {
   "name": "wg-social-studio",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "Social media studio voor WG Makelaars",
   "author": "WG Makelaars",
@@ -25,6 +25,7 @@
     "files": [
       "main.cjs",
       "montage.cjs",
+      "video-templates.cjs",
       "social.cjs",
       "preload.cjs",
       "ui/**/*",
@@ -41,6 +42,10 @@
         {
           "from": "ui/icon.png",
           "to": "ui/icon.png"
+        },
+        {
+          "from": "ui/icon.ico",
+          "to": "ui/icon.ico"
         }
       ]
     }
